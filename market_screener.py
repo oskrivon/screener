@@ -122,7 +122,10 @@ class Screener:
 
     
     def get_screening(self, num=10):
-        market_metrics = self.get_market_metrics()
+        market_metrics = self.get_market_metrics().copy()
+        drop = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT'] # it quotes always in top 3
+        market_metrics = market_metrics[~market_metrics['quotation'].isin(drop)]
+
         sorted_df = market_metrics.sort_values(by=['turnover_24h'], 
                                                ascending=False)
         top_10_vol = sorted_df[:num]
@@ -159,7 +162,7 @@ class Screener:
 
 if __name__ == '__main__':
     screener = Screener('binance')
-    print(screener.get_top_natr())
+    print(screener.get_screening())
     #metrics = screener.get_market_metrics()
     #print(screener.get_upcoming_fundings())
     #print(screener.sorting(metrics, False, param=4))

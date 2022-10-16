@@ -17,7 +17,8 @@ def img_table_creator(df_inn, column_name):
             'background-color': 'magenta',
             'subset': column_name
         }
-    )
+    ).format(formatter={('natr'): '{:.2f}',
+                        ('funding rate'): '{:.4f}'})
 
     if column_name == 'volume':metric_name = 'screening'
     if column_name == 'natr': metric_name = 'natr'
@@ -26,3 +27,8 @@ def img_table_creator(df_inn, column_name):
     name = path + metric_name + '.png'
 
     dfi.export(df_img, name)
+
+if __name__ == '__main__':
+    df = pd.DataFrame([('BTCUSDT', 100000, 20000000, 0.025, 2.58)],
+                      columns=['quotation', 'turnover_24h', 'open_interest', 'funding_rate', 'natr'])
+    img_table_creator(df, 'volume')

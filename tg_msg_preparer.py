@@ -36,8 +36,10 @@ def df_formatter(df):
         df_format['turnover_24h'].apply(lambda x: num_formatter(x))
     df_format['open_interest'] = \
         df_format['open_interest'].apply(lambda x: num_formatter(x))
+    df_format['funding_rate'] = \
+        df_format['funding_rate'].apply(lambda x: x*100)
     df_format['natr'] = \
-        df_format['natr'].apply(lambda x: round(x, 2))
+        df_format['natr'].apply(lambda x: x)
     #print(df_format)
     return df_format
 
