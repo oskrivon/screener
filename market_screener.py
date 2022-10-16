@@ -146,8 +146,11 @@ class Screener:
         upcoming_time_row = market_metrics['next_funding_time'].min()
         upcoming_fundings = \
             market_metrics[market_metrics['next_funding_time'] == upcoming_time_row]
-        sorted_df = upcoming_fundings.sort_values(by=['funding_rate'], 
-                                                  ascending=False)
+        sorted_df = upcoming_fundings.sort_values(
+            by=['funding_rate'],
+            key=abs,
+            ascending=False
+            )
         top_10_fund = sorted_df[:num]
 
         upcoming_time = datetime.fromtimestamp(int(upcoming_time_row)/1000).strftime('%Y-%m-%d %H:%M:%S')
