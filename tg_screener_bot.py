@@ -35,7 +35,7 @@ class ScreenerBot:
         self.screener = ms.Screener('binance')
         self.sender = msg_sender.TgSender(self.TOKEN, self.URL)
 
-        gag_later = '!!! not up to date screening! try again a little later !!!'
+        gag_later = 'creating an up\-to\-date screening in progress'
 
         self.msg_screening = gag_later
         self.msg_natrs = gag_later
@@ -52,6 +52,30 @@ class ScreenerBot:
         #print(len(result))
         return result['result']
 
+
+    def funding_reaction(self, chat_id):
+        if (len(str(self.funding_time)) > 0):
+            chars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
+            time = str(self.funding_time)
+            escaping_list = []
+            final_str = ''
+
+            time_list = list(time)
+            for val in time_list:
+                if val in chars:
+                    escaping_list.append('\\')
+                    escaping_list.append(val)
+                else:
+                    escaping_list.append(val)
+
+            escaping_time = final_str.join(escaping_list)
+
+        else:
+            escaping_time = ''
+
+        caption = 'next funding time\\: ' + escaping_time + '\n' + '\n' + \
+            self.tickers_fundings
+        self.sender.send_photo(chat_id, 'screener_results/' + 'fundings' + '.png', caption)
 
     
     def check_message(self, msg, chat_id):
@@ -100,31 +124,17 @@ class ScreenerBot:
             self.thread_go = True
 
         if msg == 'VOLUME':
-            #self.sender.send_message(chat_id, 'top 10 qoutes by volume')
-            caption = 'top qoutes by volume'
+            caption = 'top qoutes by volume' + '\n' + '\n' + \
+                self.tickers_screening
             self.sender.send_photo(chat_id, 'screener_results/' + 'screening' + '.png', caption)
-            self.sender.send_message(chat_id, self.tickers_screening, True)
-            #self.sender.send_message(chat_id, self.msg_screening) 
         
         if msg == 'NATR':
-            #self.sender.send_message(chat_id, 'top 10 qoutes by NATR')
-            caption = 'top qoutes by NATR'
+            caption = 'top qoutes by NATR' + '\n' + '\n' + \
+                self.tickers_natrs
             self.sender.send_photo(chat_id, 'screener_results/' + 'natr' + '.png', caption)
-            self.sender.send_message(chat_id, self.tickers_natrs, True)
-            #self.sender.send_message(chat_id, self.msg_natrs) 
 
         if msg == 'FUNDING':
-            #self.sender.send_message(chat_id, 'top qoutes by funding rate')
-            #self.sender.send_message(chat_id, self.funding_time)
-            caption = 'next funding time: ' + str(self.funding_time)
-            self.sender.send_photo(chat_id, 'screener_results/' + 'fundings' + '.png', caption)
-            #msg = 'next funding time: ' + str(self.funding_time)
-            #self.sender.send_message(chat_id, msg)
-            self.sender.send_message(chat_id, self.tickers_fundings, True)
-            #self.sender.send_message(chat_id, self.msg_fundings)
-        
-        #if msg == 'wtf':
-        #    self.sender.send_message(chat_id, 'I see you')
+            self.funding_reaction(chat_id)
         
         self.reply_keyboard(chat_id)
 
@@ -261,11 +271,7 @@ class ScreenerBot:
     def alert(self):
         print(self.users)
         for user in self.users:
-            caption = 'nearest funding: ' + str(self.funding_time)
-
-            self.sender.send_photo(
-                user, 'screener_results/fundings.png', caption)
-            self.sender.send_message(user, self.tickers_fundings, True)
+            self.funding_reaction(user)
 
     
     def alert_schedule(self):
@@ -273,8 +279,6 @@ class ScreenerBot:
         schedule.every().day.at("02:54:00").do(self.alert)
         schedule.every().day.at("10:54:00").do(self.alert)
         schedule.every().day.at("18:54:00").do(self.alert)
-        #schedule.every().minute.at(":00").do(self.alert)
-        #schedule.every().minute.at(":30").do(self.alert)
 
         while True:
             schedule.run_pending()

@@ -30,9 +30,14 @@ class TgSender:
         params = {
             'chat_id': chat_id,
             'caption': caption,
-            #'parse_mode': 'MarkdownV2'
+            'parse_mode': 'MarkdownV2'
         }
-        requests.post(url, params= params, files= files)
+        
+        try:
+            r = requests.post(url, params= params, files= files)
+            print(r)
+        except Exception as e:
+            print(e)
         #requests.post(f'{self.URL}{self.TOKEN}/sendPhoto?chat_id={chat_id}', files=files)
 
 

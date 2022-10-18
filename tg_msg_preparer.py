@@ -23,7 +23,7 @@ def msg_formatter(screening, header, funding_flag=False):
 
 
 def msg_copy_tickers_formatter(screening):
-    msg = 'click/tap on ticker to copy' + '\n'
+    msg = 'click\/tap on ticker to copy' + '\n' + '\n'
     for row in screening[0].itertuples():
         msg += '`' + str(row.quotation) + '`' + '   '
 
