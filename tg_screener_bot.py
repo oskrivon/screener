@@ -1,5 +1,6 @@
 from email import message_from_binary_file
 import requests
+import pandas as pd
 import json
 import yaml
 import time
@@ -45,6 +46,8 @@ class ScreenerBot:
         self.tickers_screening = gag_later
         self.tickers_natrs = gag_later
         self.tickers_fundings = gag_later
+
+        self.msg_log = 'msg_log.csv'
 
 
     def get_updates(self, offset=0):
@@ -116,6 +119,13 @@ class ScreenerBot:
 
         if msg == 'uc':
             self.sender.send_message(chat_id, str(len(self.users)))
+
+        if msg == 'tc':
+            try:
+                df_log = pd.read_csv(self.msg_log)
+                self.sender.send_message(chat_id, str(len(df_log)))
+            except Exception as e:
+                self.sender.send_message(1109752742, 'read msg log error: ' + str(e))
         
         #if msg == 'stop': 
             #self.thread_go = False
@@ -197,6 +207,14 @@ class ScreenerBot:
             try:
                 for message in messages:
                     if update_id < message['update_id']:
+                        # save new msg in csv
+                        msg_df = pd.DataFrame([[datetime.datetime.now(), message]])
+                        try:
+                            msg_df.to_csv(self.msg_log, mode='a', header=None, index=False)
+                        except Exception as e:
+                            self.sender.send_message(1109752742, 'add to msg log error: ' + str(e))
+                        # save end
+
                         if 'message' in message:
                             chat_id = message['message']['chat']['id']
                             try:
