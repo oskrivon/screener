@@ -88,7 +88,7 @@ class ScreenerBot:
             self.users_update(chat_id)
         
         if msg == 'help':
-            msg_ = ('"VOLUME" to get the top 10 quotes with the highest volumes at the moment (last 24 hours, /$)' + '\n'+
+            msg_ = ('"VOLUME" to get the top 10 quotes with the highest volumes at the moment (last 24 hours, $)' + '\n'+
                     '"NATR" to get the top 10 quotes with the highest NATR' + '\n' +
                     '"FUNDING" to get the top quotes with the highest fundings rate' + '\n' +
                     'data source: Binance')
@@ -125,6 +125,7 @@ class ScreenerBot:
             try:
                 df_log = pd.read_csv(self.msg_log)
                 self.sender.send_message(chat_id, str(len(df_log)))
+                df_log = pd.DataFrame()
             except Exception as e:
                 self.sender.send_message(1109752742, 'read msg log error: ' + str(e))
         
