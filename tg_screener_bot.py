@@ -88,9 +88,10 @@ class ScreenerBot:
             self.users_update(chat_id)
         
         if msg == 'help':
-            msg_ = ('"volumes" to get the top 10 quotes with the best volumes at the moment' + '\n'+
-                    '"NATRs" to get the top 10 quotes with the best NATR' + '\n' +
-                    '"fundings" to get the top quotes with the best fundings rate')
+            msg_ = ('"VOLUME" to get the top 10 quotes with the highest volumes at the moment (last 24 hours, /$)' + '\n'+
+                    '"NATR" to get the top 10 quotes with the highest NATR' + '\n' +
+                    '"FUNDING" to get the top quotes with the highest fundings rate' + '\n' +
+                    'data source: Binance')
             self.sender.send_message(chat_id, msg_)
 
         if msg == 'roadmap':
