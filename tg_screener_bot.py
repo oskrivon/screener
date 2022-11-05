@@ -237,6 +237,8 @@ class ScreenerBot:
                             self.check_message('wtf', chat_id)
             except Exception as e:
                 print(e)
+                
+            time.sleep(1)
 
 
     def screening_preparer(self, screening_type, delay):
