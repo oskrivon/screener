@@ -9,17 +9,29 @@ import conn_binance_stream as stream
 
 
 class BinanceConnector:
-    def __init__(self):
-        self.endpoint = 'https://fapi.binance.com/'
+    def __init__(self, market):
+        if market == 'future':
+            self.endpoint = 'https://fapi.binance.com/fapi/v1/'
+            self.metrics = [
+                self.add_fundings,
+                self.add_open_interest,
+                self.add_volumes
+                ]
+        elif market == 'spot':
+            self.endpoint = 'https://api.binance.com/api/v3/'
+            self.metrics = [
+                self.add_volumes
+                ]
 
 
     # getting all quotes from binance. 
     # First get all USDT quotes, then all missing BUSD's
     def add_all_quotes(self):
-        r = requests.get(self.endpoint + 'fapi/v1/exchangeInfo')
+        r = requests.get(self.endpoint + 'exchangeInfo?permissions=["SPOT"]')
         r_json = json.loads(r.text)
 
         symbols = r_json['symbols']
+        print(symbols['symbol'])
         quotes_USDT = [x['baseAsset'] for x in symbols if 'USDT' in x['quoteAsset']]
 
         quotes_BUSD = [x['baseAsset'] for x in symbols if 'BUSD' in x['quoteAsset'] and 
@@ -29,6 +41,11 @@ class BinanceConnector:
                      [x + 'BUSD' for x in quotes_BUSD]
 
         quotes_df = pd.DataFrame({'quotation': quotes_all})
+
+        # thit quotes are delisting
+        drop = ['DNTUSDT', 'DNTBUSD', 'DNTBTC', 'NBSUSDT', 'BTGUSDT', 'BTGBUSD', 'BTGBTC', 'TCTUSDT', 'TCTBTC', 'VIDTUSDT']
+        quotes_df = quotes_df[~quotes_df['quotation'].isin(drop)]
+
         #print(quotes_df.drop_duplicates().sort_values(by='quotation', ascending=True)[30:50])
         return quotes_df.drop_duplicates()
 
@@ -38,7 +55,7 @@ class BinanceConnector:
         df_ = df_.sort_values(by='quotation', ascending=True)
         quotes = df_['quotation'].to_list()
 
-        r = requests.get(self.endpoint + 'fapi/v1/ticker/24hr')
+        r = requests.get(self.endpoint + 'ticker/24hr')
         ticker_24h_json = json.loads(r.text)
         volumes = [x['quoteVolume'] for x in ticker_24h_json 
                    if x['symbol'] in quotes]
@@ -82,7 +99,7 @@ class BinanceConnector:
 
         oi_list = []
         for q in quotes:
-            endpoint = self.endpoint + 'fapi/v1/openInterest'
+            endpoint = self.endpoint + 'openInterest'
             payload = {
                 'symbol': q
             }
@@ -111,13 +128,13 @@ class BinanceConnector:
 
 
     def get_server_time(self):
-        r = requests.get(self.endpoint + 'fapi/v1/time')
+        r = requests.get(self.endpoint + 'time')
         server_time = json.loads(r.text)['serverTime']
         return server_time
 
 
     def get_kline(self, quotation, interval):
-        endpoint = self.endpoint + 'fapi/v1/klines'
+        endpoint = self.endpoint + 'klines'
         payload = {
             'symbol': quotation,
             'interval': interval,
@@ -147,13 +164,8 @@ class BinanceConnector:
 
     def get_market_data(self):
         quotes_df = self.add_all_quotes()
-        metrics = [
-            self.add_fundings,
-            self.add_open_interest,
-            self.add_volumes
-        ]
 
-        for function in metrics:
+        for function in self.metrics:
             result_df = function(quotes_df)
             quotes_df = result_df
         
@@ -161,7 +173,6 @@ class BinanceConnector:
 
 
 if __name__ == '__main__':
-    connector = BinanceConnector()
-    print(connector.get_kline('BTCUSDT'))
-    #df = pd.DataFrame({'quotation': quotation})
-    #print(connector.get_fundings(df))
+    connector = BinanceConnector('spot')
+    #print(connector.get_kline('TCTUSDT', '5m'))
+    print(connector.add_all_quotes())

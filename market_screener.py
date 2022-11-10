@@ -9,8 +9,8 @@ import data_preparer
 import connector_binance as binance
 
 class Screener:
-    def __init__(self, ex_flag):
-        self.exchange = ex_flag
+    def __init__(self, exchange, market):
+        self.exchange = exchange
 
         if self.exchange == 'bybit':
             self.session = inverse_perpetual.HTTP(
@@ -27,7 +27,7 @@ class Screener:
             self.df = pd.DataFrame({'quotation': self.quotation})
             
         if self.exchange == 'binance':
-            self.connector = binance.BinanceConnector()            
+            self.connector = binance.BinanceConnector(market)
 
         print('>>> Screener OK')
 
@@ -68,12 +68,17 @@ class Screener:
         if self.exchange == 'binance':
             df = self.connector.get_market_data()
 
-        df[['turnover_24h', 'open_interest', 'funding_rate']] = \
-            df[['turnover_24h', 'open_interest', 'funding_rate']].astype(float)
-        #df[['next_funding_time']] = df[['next_funding_time']].astype(int)
+        # for spot market funding rate and open interest are not exist
+        if 'funding_rate' in df:
+            df[['turnover_24h', 'open_interest', 'funding_rate']] = \
+                df[['turnover_24h', 'open_interest', 'funding_rate']].astype(float)
+        else:
+            df[['turnover_24h']] = df[['turnover_24h']].astype(float)
 
-        #date = datetime.fromisoformat(data['next_funding_time'][:-1])
-
+        print(len(df))
+        # drop all coins with 24h volume less that $30M 
+        df = df[df.turnover_24h > 1000000]
+        print(len(df))
         return df
 
 
@@ -149,11 +154,5 @@ class Screener:
 
 
 if __name__ == '__main__':
-    screener = Screener('binance')
-    print(screener.get_screening())
-    #metrics = screener.get_market_metrics()
-    #print(screener.get_upcoming_fundings())
-    #print(screener.sorting(metrics, False, param=4))
-    #top_10_vol = screener.get_top()
-    #print(screener.add_natr(test_list))
-    #print(screener.get_screening())
+    screener = Screener('binance', 'spot')
+    print(screener.get_top_natr())
