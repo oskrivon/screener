@@ -75,10 +75,8 @@ class Screener:
         else:
             df[['turnover_24h']] = df[['turnover_24h']].astype(float)
 
-        print(len(df))
         # drop all coins with 24h volume less that $30M 
         df = df[df.turnover_24h > 1000000]
-        print(len(df))
         return df
 
 

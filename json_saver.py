@@ -1,30 +1,17 @@
-import pandas as pd
 import json
 
+def json_save(df):
+    print(df)
 
-df = pd.DataFrame(
-    {'quotation': ['BTCUSDT', 'EHTh'],
-    'natr': [0.5, 0.75]},
-    index=[0, 1])
+    result_json = {}
 
-print(df)
+    df_dict = df.to_dict('records')
+    result_json['spot'] = df_dict
 
-big_json = {}
+    print(result_json)
 
-result = df.to_dict('records')
-print(type(result))
-print(result)
-big_json['spot'] = result
-big_json['future'] = result
-
-print(big_json)
-
-#parsed = json.dumps(big_json)
-#print(type(parsed))
-#print(parsed)
-
-with open('test.json', 'w') as outfile:
-    json.dump(big_json, outfile, indent=4)
-
-#dump = json.dumps(parsed, indent=4)
-#print(dump)
+    try:
+        with open('test.json', 'w') as outfile:
+            json.dump(result_json, outfile, indent=4)
+    except Exception as e:
+        print(e)

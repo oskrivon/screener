@@ -12,6 +12,7 @@ import market_screener as ms
 import tg_msg_preparer as msg_preparer
 import tg_msg_sender as msg_sender
 import tg_img_table_creator as img_creator
+import json_saver as saver
 
 
 class ScreenerBot:
@@ -33,7 +34,7 @@ class ScreenerBot:
             print(self.users)
         f.close()
 
-        self.screener = ms.Screener('binance')
+        self.screener = ms.Screener('binance', 'future')
         self.sender = msg_sender.TgSender(self.TOKEN, self.URL)
 
         gag_later = 'creating an up\-to\-date screening in progress'
@@ -259,6 +260,11 @@ class ScreenerBot:
                 if screening_type == self.screener.get_top_natr:
                     screening = screening_type(num=10)
 
+                    # scetch saving json for rest server
+                    df_for_json = screening[0][['quotation','natr','turnover_24h']].copy()
+                    saver.json_save(df_for_json)
+                    # end of the scetch
+                    
                     header = 'top qoutes by natr'
                     self.msg_natrs = msg_preparer.msg_formatter(
                         screening, header)
@@ -287,6 +293,7 @@ class ScreenerBot:
 
                 time.sleep(delay)
             except Exception as e:
+                print(e, screening_type)
                 self.sender.send_message(1109752742, 'screening preparing error: ' + str(e))
 
 

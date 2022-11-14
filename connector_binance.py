@@ -31,7 +31,7 @@ class BinanceConnector:
         r_json = json.loads(r.text)
 
         symbols = r_json['symbols']
-        print(symbols['symbol'])
+
         quotes_USDT = [x['baseAsset'] for x in symbols if 'USDT' in x['quoteAsset']]
 
         quotes_BUSD = [x['baseAsset'] for x in symbols if 'BUSD' in x['quoteAsset'] and 
