@@ -38,6 +38,7 @@ class ScreenerBot:
         f.close()
 
         self.screener = ms.Screener('binance', 'future')
+        self.screener_spot = ms.Screener('binance', 'spot')
         self.sender = msg_sender.TgSender(self.TOKEN, self.URL)
 
         gag_later = 'creating an up\-to\-date screening in progress'
@@ -45,11 +46,13 @@ class ScreenerBot:
         self.msg_screening = gag_later
         self.msg_natrs = gag_later
         self.msg_fundings = gag_later
+        self.msg_natrs_spot = gag_later
         self.funding_time = ''
 
         self.tickers_screening = gag_later
         self.tickers_natrs = gag_later
         self.tickers_fundings = gag_later
+        self.tickers_natrs_spot = gag_later
 
         self.msg_log = 'msg_log.csv'
 
@@ -155,12 +158,47 @@ class ScreenerBot:
         
         self.reply_keyboard(chat_id)
 
+        if msg == 'NATR SPOT':
+            caption = 'top qoutes by NATR' + '\n' + '\n' + \
+                self.tickers_natrs
+            self.sender.send_photo(chat_id, 'screener_results/' + 'natr_spot' + '.png', caption)
+            self.reply_spot(chat_id)
+
+        if msg == 'spot':
+            self.reply_spot(chat_id)
+
+        if msg == 'back':
+            self.reply_keyboard(chat_id)
+        
+        #self.reply_keyboard(chat_id)
+
 
     def reply_keyboard(self, chat_id, text='select metric'):
         reply_markup = { 
             "keyboard": [
+                ['spot'],
                 ['VOLUME', 'NATR', 'FUNDING'], 
                 ['help', 'roadmap', 'feedback']
+            ], 
+            "resize_keyboard": True, 
+            "one_time_keyboard": True
+        }
+
+        #reply_markup['keyboard'][1]['feedback'].url = 'https://www.google.ru/'
+
+        data = {
+            'chat_id': chat_id, 
+            'text': text, 
+            'reply_markup': json.dumps(reply_markup)
+        }
+        requests.post(f'{self.URL}{self.TOKEN}/sendMessage',
+            proxies=self.proxies, data=data)
+
+    def reply_spot(self, chat_id, text='select metric'):
+        reply_markup = { 
+            "keyboard": [
+                ['VOLUME', 'NATR SPOT'], 
+                ['back']
             ], 
             "resize_keyboard": True, 
             "one_time_keyboard": True
@@ -252,10 +290,6 @@ class ScreenerBot:
             try:
                 if screening_type == self.screener.get_screening:
                     screening = screening_type(num=10)
-                    
-                    header = 'top qoutes by volume'
-                    self.msg_screening = msg_preparer.msg_formatter(
-                        screening, header)
 
                     self.tickers_screening = msg_preparer.msg_copy_tickers_formatter(
                         screening)
@@ -265,15 +299,6 @@ class ScreenerBot:
                 if screening_type == self.screener.get_top_natr:
                     screening = screening_type(num=10)
 
-                    # scetch saving json for rest server
-                    #df_for_json = screening[0][['quotation','natr','turnover_24h']].copy()
-                    #saver.json_save(df_for_json)
-                    # end of the scetch
-                    
-                    header = 'top qoutes by natr'
-                    self.msg_natrs = msg_preparer.msg_formatter(
-                        screening, header)
-
                     self.tickers_natrs = msg_preparer.msg_copy_tickers_formatter(
                         screening)
                     
@@ -282,16 +307,24 @@ class ScreenerBot:
                 if screening_type == self.screener.get_upcoming_fundings:
                     screening = screening_type(num=10)
 
-                    header = 'top qoutes by funding rates'
-                    self.msg_fundings = msg_preparer.msg_formatter(
-                        screening, header, funding_flag=True)
-
                     self.tickers_fundings = msg_preparer.msg_copy_tickers_formatter(
                         screening)
 
                     self.funding_time = screening[1]
                     
                     column_to_highlight = 'funding rate'
+
+                if screening_type == self.screener_spot.get_top_natr:
+                    screening = screening_type(num=10)
+                    # scetch saving json for rest server
+                    #df_for_json = screening[0][['quotation','natr','turnover_24h']].copy()
+                    #saver.json_save(df_for_json)
+                    # end of the scetch
+
+                    self.tickers_natrs_spot = msg_preparer.msg_copy_tickers_formatter(
+                        screening)
+
+                    column_to_highlight = 'natr'
 
                 screening_formated = msg_preparer.df_formatter(screening[0])
                 img_creator.img_table_creator(screening_formated, column_to_highlight)
@@ -345,6 +378,15 @@ class ScreenerBot:
         )
         th_funding.daemon = True
         th_funding.start()
+
+        th_natr_spot = threading.Thread(
+            target=self.screening_preparer,
+            args = (
+                self.screener_spot.get_top_natr, 1
+            )
+        )
+        th_natr_spot.daemon = True
+        th_natr_spot.start()
 
         th_alert = threading.Thread(
             target=self.alert_schedule
