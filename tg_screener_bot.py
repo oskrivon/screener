@@ -24,6 +24,9 @@ class ScreenerBot:
 
         self.thread_go = True
 
+        self.proxies = {'http': 'http://neppaque5766:fac948@193.23.50.40:10251'}
+        #print(requests.get('https://whoer.net/ru', proxies=self.proxies).text)
+
         # creating file with users id (if not exist)
         #file = open(self.users_list, 'a')
         #file.close()
@@ -52,7 +55,8 @@ class ScreenerBot:
 
 
     def get_updates(self, offset=0):
-        result = requests.get(f'{self.URL}{self.TOKEN}/getUpdates?offset={offset}').json()
+        result = requests.get(f'{self.URL}{self.TOKEN}/getUpdates?offset={offset}',
+            proxies=self.proxies).json()
         #print(len(result))
         return result['result']
 
@@ -169,7 +173,8 @@ class ScreenerBot:
             'text': text, 
             'reply_markup': json.dumps(reply_markup)
         }
-        requests.post(f'{self.URL}{self.TOKEN}/sendMessage', data=data)
+        requests.post(f'{self.URL}{self.TOKEN}/sendMessage',
+            proxies=self.proxies, data=data)
 
 
     def users_update(self, chat_id):
@@ -239,7 +244,7 @@ class ScreenerBot:
             except Exception as e:
                 print(e)
                 
-            time.sleep(1)
+            time.sleep(3)
 
 
     def screening_preparer(self, screening_type, delay):
@@ -261,8 +266,8 @@ class ScreenerBot:
                     screening = screening_type(num=10)
 
                     # scetch saving json for rest server
-                    df_for_json = screening[0][['quotation','natr','turnover_24h']].copy()
-                    saver.json_save(df_for_json)
+                    #df_for_json = screening[0][['quotation','natr','turnover_24h']].copy()
+                    #saver.json_save(df_for_json)
                     # end of the scetch
                     
                     header = 'top qoutes by natr'

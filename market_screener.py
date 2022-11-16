@@ -11,6 +11,7 @@ import connector_binance as binance
 class Screener:
     def __init__(self, exchange, market):
         self.exchange = exchange
+        self.market = market
 
         if self.exchange == 'bybit':
             self.session = inverse_perpetual.HTTP(
@@ -27,7 +28,7 @@ class Screener:
             self.df = pd.DataFrame({'quotation': self.quotation})
             
         if self.exchange == 'binance':
-            self.connector = binance.BinanceConnector(market)
+            self.connector = binance.BinanceConnector(self.market)
 
         print('>>> Screener OK')
 
@@ -153,4 +154,7 @@ class Screener:
 
 if __name__ == '__main__':
     screener = Screener('binance', 'spot')
+    print(screener.get_top_natr())
+
+    screener = Screener('binance', 'future')
     print(screener.get_top_natr())
