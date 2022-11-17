@@ -160,7 +160,7 @@ class ScreenerBot:
 
         if msg == 'NATR SPOT':
             caption = 'top qoutes by NATR' + '\n' + '\n' + \
-                self.tickers_natrs
+                self.tickers_natrs_spot
             self.sender.send_photo(chat_id, 'screener_results/' + 'natr_spot' + '.png', caption)
             self.reply_spot(chat_id)
 

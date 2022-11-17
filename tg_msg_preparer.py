@@ -35,6 +35,9 @@ def df_formatter(df):
     if 'turnover_24h' in df_format:
         df_format['turnover_24h'] = \
             df_format['turnover_24h'].apply(lambda x: num_formatter(x))
+    if 'vol_4h' in df_format:
+        df_format['vol_4h'] = \
+            df_format['vol_4h'].apply(lambda x: num_formatter(x))
     if 'open_interest' in df_format:
         df_format['open_interest'] = \
             df_format['open_interest'].apply(lambda x: num_formatter(x))

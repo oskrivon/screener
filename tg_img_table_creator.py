@@ -6,7 +6,7 @@ def img_table_creator(df_inn, column_name):
     df = df_inn.copy()
     path = 'screener_results/'
 
-    if df.shape[1] == 6: # it is futures market
+    if df.shape[1] == 7: # it is futures market
         df_ = df.loc[:, ['quotation', 'turnover_24h', 'open_interest', 'funding_rate', 'natr']]
         df_.rename(columns = {'turnover_24h' : 'volume', 
                             'open_interest' : 'OI', 
@@ -27,10 +27,11 @@ def img_table_creator(df_inn, column_name):
                 metric_name = 'natr'
         if column_name == 'funding rate': metric_name = 'fundings'
 
-    elif df.shape[1] == 3:
+    elif df.shape[1] == 4:
         
-        df_ = df.loc[:, ['quotation', 'natr', 'turnover_24h']]
-        df_.rename(columns = {'turnover_24h' : 'volume'})
+        df_ = df.loc[:, ['quotation', 'natr', 'turnover_24h', 'vol_4h']]
+        df_.rename(columns = {'turnover_24h' : 'volume',
+                              'vol_4h': 'volume 4h'}, inplace = True)
 
         df_.reset_index(drop=True, inplace=True)
         
