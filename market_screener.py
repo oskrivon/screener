@@ -95,21 +95,24 @@ class Screener:
             low = np.array(df['Low'])[-x:]
             close = np.array(df['Close'])[-x:]
 
-
         natr = talib.NATR(high, low, close, timeperiod)[-1]
 
         return natr
 
 
+    # in addition to the natr, add the 4h volumes
     def add_natr(self, metrics):
         metrics_ = metrics.copy()
 
         natr = []
+        vol_4h = []
         for row in metrics_.itertuples():
             quotation = row.quotation
             natr.append(self.get_natr(quotation))
+            vol_4h.append(self.connector.get_volume_4h(quotation))
         
         metrics_['natr'] = natr
+        metrics_['vol_4h'] = vol_4h
         return metrics_
 
     
@@ -153,8 +156,5 @@ class Screener:
 
 
 if __name__ == '__main__':
-    screener = Screener('binance', 'spot')
-    print(screener.get_top_natr())
-
     screener = Screener('binance', 'future')
-    print(screener.get_top_natr())
+    print(screener.get_screening())

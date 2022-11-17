@@ -133,12 +133,12 @@ class BinanceConnector:
         return server_time
 
 
-    def get_kline(self, quotation, interval):
+    def get_kline(self, quotation, interval, limit=15):
         endpoint = self.endpoint + 'klines'
         payload = {
             'symbol': quotation,
             'interval': interval,
-            'limit': 15
+            'limit': limit
         }
 
         df = 0
@@ -153,13 +153,22 @@ class BinanceConnector:
                     'Taker buy quote asset volume', 'Ignore'
                     ]
                 df = pd.DataFrame(data, columns=columns)
+                #print(df['Volume'], df['Quote asset volume'])
             else:
                 print('>>> error OI request:', r.status_code)
         except Exception as e:
             print(e)
         
-        result = df[['Open', 'High', 'Low', 'Close', 'Volume']].astype(float)
+        result = df[[
+            'Open', 'High', 'Low', 'Close', 
+            'Volume', 'Quote asset volume']].astype(float)
+
         return result
+
+
+    def get_volume_4h(self, quotation, interval = '4h', limit=1):
+        return (self.get_kline(quotation, interval, limit)
+                .iloc[0]['Quote asset volume'])
 
 
     def get_market_data(self):
@@ -175,4 +184,6 @@ class BinanceConnector:
 if __name__ == '__main__':
     connector = BinanceConnector('spot')
     #print(connector.get_kline('TCTUSDT', '5m'))
-    print(connector.add_all_quotes())
+    #qqq = connector.add_all_quotes()
+    #print(connector.add_volumes(qqq))
+    print(connector.get_volume_4h('BTCUSDT'))
