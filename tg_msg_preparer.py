@@ -24,7 +24,7 @@ def msg_formatter(screening, header, funding_flag=False):
 
 def msg_copy_tickers_formatter(screening):
     msg = 'click\/tap on ticker to copy' + '\n' + '\n'
-    for row in screening[0].itertuples():
+    for row in screening.itertuples():
         msg += '`' + str(row.quotation) + '`' + '   '
 
     return msg
@@ -44,9 +44,12 @@ def df_formatter(df):
     if 'funding_rate' in df_format:
         df_format['funding_rate'] = \
             df_format['funding_rate'].apply(lambda x: x*100)
-    if 'natr' in df_format:
-        df_format['natr'] = \
-            df_format['natr'].apply(lambda x: x)
+    if 'natr_14x5' in df_format:
+        df_format['natr_14x5'] = \
+            df_format['natr_14x5'].apply(lambda x: x)
+    if 'natr_30x1' in df_format:
+        df_format['natr_30x1'] = \
+            df_format['natr_30x1'].apply(lambda x: x)
     #print(df_format)
     return df_format
 

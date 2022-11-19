@@ -77,11 +77,16 @@ class Screener:
             df[['turnover_24h']] = df[['turnover_24h']].astype(float)
 
         # drop all coins with 24h volume less that $30M 
-        df = df[df.turnover_24h > 1000000]
+        #df = df[df.turnover_24h > 1000000]
+        print(len(df))
         return df
 
 
+    # return 14x5 and 30x1 natres
     def get_natr(self, quotation):
+        natr_14x5 = 0
+        natr_30x1 = 0
+
         if self.exchange == 'bybit':
             df = data_preparer.data_preparation(quotation, '15m')
         
@@ -94,39 +99,39 @@ class Screener:
             high = np.array(df['High'])[-x:]
             low = np.array(df['Low'])[-x:]
             close = np.array(df['Close'])[-x:]
+            natr_14x5 = talib.NATR(high, low, close, timeperiod)[-1]
 
-        natr = talib.NATR(high, low, close, timeperiod)[-1]
+            df = self.connector.get_kline(quotation, '1m', limit=31)
 
-        return natr
+            x = 100 # magick number, if < natr be worst
+            timeperiod = 30
+            
+            high = np.array(df['High'])[-x:]
+            low = np.array(df['Low'])[-x:]
+            close = np.array(df['Close'])[-x:]
+            natr_30x1 = talib.NATR(high, low, close, timeperiod)[-1]
+
+        return natr_14x5, natr_30x1
 
 
     # in addition to the natr, add the 4h volumes
     def add_natr(self, metrics):
         metrics_ = metrics.copy()
 
-        natr = []
+        natr_14x5 = []
+        natr_30x1 = []
         vol_4h = []
+
         for row in metrics_.itertuples():
             quotation = row.quotation
-            natr.append(self.get_natr(quotation))
+            natr_14x5.append(self.get_natr(quotation)[0])
+            natr_30x1.append(self.get_natr(quotation)[1])
             vol_4h.append(self.connector.get_volume_4h(quotation))
         
-        metrics_['natr'] = natr
+        metrics_['natr_14x5'] = natr_14x5
+        metrics_['natr_30x1'] = natr_30x1
         metrics_['vol_4h'] = vol_4h
         return metrics_
-
-    
-    def get_screening(self, num=10):
-        market_metrics = self.get_market_metrics().copy()
-        drop = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT'] # it quotes always in top 3
-        market_metrics = market_metrics[~market_metrics['quotation'].isin(drop)]
-
-        sorted_df = market_metrics.sort_values(by=['turnover_24h'], 
-                                               ascending=False)
-        top_10_vol = sorted_df[:num]
-
-        analysis_time = datetime.utcnow()
-        return self.add_natr(top_10_vol), analysis_time
 
     
     def get_top_natr(self, num=10):
@@ -154,7 +159,19 @@ class Screener:
         upcoming_time = datetime.fromtimestamp(int(upcoming_time_row)/1000).strftime('%Y-%m-%d %H:%M:%S')
         return self.add_natr(top_10_fund), upcoming_time
 
+    
+    def get_screening(self):
+        market_metrics = self.get_market_metrics()
+        mm_with_natres = self.add_natr(market_metrics)
+
+        print(len(mm_with_natres))
+        return mm_with_natres
+
 
 if __name__ == '__main__':
     screener = Screener('binance', 'future')
-    print(screener.get_screening())
+    mmm = screener.get_market_metrics()
+    #print(mmm)
+    #print(screener.get_screening())
+    #print(screener.get_natr('BTCUSDT'))
+    #print(screener.get_screening())

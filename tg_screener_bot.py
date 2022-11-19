@@ -6,7 +6,7 @@ import yaml
 import time
 import threading
 import schedule
-import datetime
+from datetime import datetime
 
 import market_screener as ms
 import tg_msg_preparer as msg_preparer
@@ -37,7 +37,7 @@ class ScreenerBot:
             print(self.users)
         f.close()
 
-        self.screener = ms.Screener('binance', 'future')
+        self.screener_future = ms.Screener('binance', 'future')
         self.screener_spot = ms.Screener('binance', 'spot')
         self.sender = msg_sender.TgSender(self.TOKEN, self.URL)
 
@@ -49,10 +49,14 @@ class ScreenerBot:
         self.msg_natrs_spot = gag_later
         self.funding_time = ''
 
-        self.tickers_screening = gag_later
-        self.tickers_natrs = gag_later
-        self.tickers_fundings = gag_later
-        self.tickers_natrs_spot = gag_later
+        self.tickers_fut_vol = gag_later
+        self.tickers_fut_natr_14x5 = gag_later
+        self.tickers_fut_natr_30x1 = gag_later
+        self.tickers_fut_fund = gag_later
+
+        self.tickers_spot_vol = gag_later
+        self.tickers_spot_natr_14x5 = gag_later
+        self.tickers_spot_natr_30x1 = gag_later
 
         self.msg_log = 'msg_log.csv'
 
@@ -84,8 +88,7 @@ class ScreenerBot:
         else:
             escaping_time = ''
 
-        caption = 'next funding time\\: ' + escaping_time + '\n' + '\n' + \
-            self.tickers_fundings
+        caption = 'next funding time\\: ' + escaping_time + '\n' + '\n' + self.tickers_fut_fund
         self.sender.send_photo(chat_id, 'screener_results/' + 'fundings' + '.png', caption)
 
     
@@ -137,37 +140,51 @@ class ScreenerBot:
             except Exception as e:
                 self.sender.send_message(1109752742, 'read msg log error: ' + str(e))
         
-        #if msg == 'stop': 
-            #self.thread_go = False
-        
         if msg == 'go':
             self.thread_go = True
 
-        if msg == 'VOLUME':
+        if msg == 'VOL 4h':
             caption = 'top qoutes by volume' + '\n' + '\n' + \
-                self.tickers_screening
-            self.sender.send_photo(chat_id, 'screener_results/' + 'screening' + '.png', caption)
+                self.tickers_fut_vol
+            self.sender.send_photo(chat_id, 'screener_results/' + 'vol 4h' + '.png', caption)
         
-        if msg == 'NATR':
+        if msg == 'NATR 5':
             caption = 'top qoutes by NATR' + '\n' + '\n' + \
-                self.tickers_natrs
-            self.sender.send_photo(chat_id, 'screener_results/' + 'natr' + '.png', caption)
+                self.tickers_fut_natr_14x5
+            self.sender.send_photo(chat_id, 'screener_results/' + 'natr 14x5m' + '.png', caption)
+        
+        if msg == 'NATR 1':
+            caption = 'top qoutes by NATR' + '\n' + '\n' + \
+                self.tickers_fut_natr_30x1
+            self.sender.send_photo(chat_id, 'screener_results/' + 'natr 30x1m' + '.png', caption)
 
         if msg == 'FUNDING':
             self.funding_reaction(chat_id)
         
         self.reply_keyboard(chat_id)
 
-        if msg == 'NATR SPOT':
+        if msg == 'VOL 4h SPOT':
             caption = 'top qoutes by NATR' + '\n' + '\n' + \
-                self.tickers_natrs_spot
-            self.sender.send_photo(chat_id, 'screener_results/' + 'natr_spot' + '.png', caption)
+                self.tickers_spot_vol
+            self.sender.send_photo(chat_id, 'screener_results/' + 'vol 4h spot' + '.png', caption)
+            self.reply_spot(chat_id)
+
+        if msg == 'NATR 5 SPOT':
+            caption = 'top qoutes by NATR' + '\n' + '\n' + \
+                self.tickers_spot_natr_14x5
+            self.sender.send_photo(chat_id, 'screener_results/' + 'natr 14x5m spot' + '.png', caption)
+            self.reply_spot(chat_id)
+
+        if msg == 'NATR 1 SPOT':
+            caption = 'top qoutes by NATR' + '\n' + '\n' + \
+                self.tickers_spot_natr_30x1
+            self.sender.send_photo(chat_id, 'screener_results/' + 'natr 30x1m spot' + '.png', caption)
             self.reply_spot(chat_id)
 
         if msg == 'spot':
             self.reply_spot(chat_id)
 
-        if msg == 'back':
+        if msg == 'future':
             self.reply_keyboard(chat_id)
         
         #self.reply_keyboard(chat_id)
@@ -177,7 +194,7 @@ class ScreenerBot:
         reply_markup = { 
             "keyboard": [
                 ['spot'],
-                ['VOLUME', 'NATR', 'FUNDING'], 
+                ['VOL 4h', 'NATR 5', 'NATR 1', 'FUNDING'], 
                 ['help', 'roadmap', 'feedback']
             ], 
             "resize_keyboard": True, 
@@ -197,8 +214,9 @@ class ScreenerBot:
     def reply_spot(self, chat_id, text='select metric'):
         reply_markup = { 
             "keyboard": [
-                ['VOLUME', 'NATR SPOT'], 
-                ['back']
+                ['future'],
+                ['VOL 4h SPOT', 'NATR 5 SPOT', 'NATR 1 SPOT'], 
+                ['help', 'roadmap', 'feedback']
             ], 
             "resize_keyboard": True, 
             "one_time_keyboard": True
@@ -254,7 +272,7 @@ class ScreenerBot:
                 for message in messages:
                     if update_id < message['update_id']:
                         # save new msg in csv
-                        msg_df = pd.DataFrame([[datetime.datetime.now(), message]])
+                        msg_df = pd.DataFrame([[datetime.now(), message]])
                         try:
                             msg_df.to_csv(self.msg_log, mode='a', header=None, index=False)
                         except Exception as e:
@@ -288,46 +306,58 @@ class ScreenerBot:
     def screening_preparer(self, screening_type, delay):
         while self.thread_go:
             try:
-                if screening_type == self.screener.get_screening:
-                    screening = screening_type(num=10)
+                if screening_type == self.screener_future.get_screening:
+                    screening = msg_preparer.df_formatter(screening_type())
+                    upcoming_time_row = screening['next_funding_time'].min()
 
-                    self.tickers_screening = msg_preparer.msg_copy_tickers_formatter(
-                        screening)
+                    num = 10
                     
-                    column_to_highlight = 'volume'
+                    top_natr_14x5 = screening.sort_values(by='natr_14x5', ascending=False)[:num]
+                    self.tickers_fut_natr_14x5 = msg_preparer.msg_copy_tickers_formatter(top_natr_14x5)
+                    img_creator.img_table_creator(top_natr_14x5, 'natr 14x5m')
 
-                if screening_type == self.screener.get_top_natr:
-                    screening = screening_type(num=10)
+                    top_natr_30x1 = screening.sort_values(by='natr_30x1', ascending=False)[:num]
+                    self.tickers_fut_natr_30x1 = msg_preparer.msg_copy_tickers_formatter(top_natr_30x1)
+                    img_creator.img_table_creator(top_natr_30x1, 'natr 30x1m')
 
-                    self.tickers_natrs = msg_preparer.msg_copy_tickers_formatter(
-                        screening)
-                    
-                    column_to_highlight = 'natr'
+                    top_vol = screening.sort_values(by='vol_4h', ascending=False)[:num]
+                    self.tickers_fut_vol = msg_preparer.msg_copy_tickers_formatter(top_vol)
+                    img_creator.img_table_creator(top_vol, 'vol 4h')
 
-                if screening_type == self.screener.get_upcoming_fundings:
-                    screening = screening_type(num=10)
+                    upcoming_fundings = \
+                        screening[screening['next_funding_time'] == upcoming_time_row]
+                    top_fund = upcoming_fundings.sort_values(
+                        by=['funding_rate'],
+                        key=abs,
+                        ascending=False
+                        )[:num]
+                    self.funding_time = datetime.fromtimestamp(int(upcoming_time_row)/1000).strftime('%Y-%m-%d %H:%M:%S')
+                    self.tickers_fut_fund = msg_preparer.msg_copy_tickers_formatter(top_fund)
+                    img_creator.img_table_creator(top_fund, 'FR')
 
-                    self.tickers_fundings = msg_preparer.msg_copy_tickers_formatter(
-                        screening)
+                elif screening_type == self.screener_spot.get_screening:
+                    screening = msg_preparer.df_formatter(screening_type())
 
-                    self.funding_time = screening[1]
-                    
-                    column_to_highlight = 'funding rate'
+                    num = 10
 
-                if screening_type == self.screener_spot.get_top_natr:
-                    screening = screening_type(num=10)
+                    top_natr_14x5 = screening.sort_values(by='natr_14x5', ascending=False)[:num]
+                    self.tickers_spot_natr_14x5 = msg_preparer.msg_copy_tickers_formatter(top_natr_14x5)
+                    img_creator.img_table_creator(top_natr_14x5, 'natr 14x5m')
+
+                    top_natr_30x1 = screening.sort_values(by='natr_30x1', ascending=False)[:num]
+                    self.tickers_spot_natr_30x1= msg_preparer.msg_copy_tickers_formatter(top_natr_30x1)
+                    img_creator.img_table_creator(top_natr_30x1, 'natr 30x1m')
+
+                    top_vol = screening.sort_values(by='vol_4h', ascending=False)[:num]
+                    self.tickers_spot_vol = msg_preparer.msg_copy_tickers_formatter(top_vol)
+                    img_creator.img_table_creator(top_vol, 'vol 4h')
+
                     # scetch saving json for rest server
                     #df_for_json = screening[0][['quotation','natr','turnover_24h']].copy()
                     #saver.json_save(df_for_json)
                     # end of the scetch
 
-                    self.tickers_natrs_spot = msg_preparer.msg_copy_tickers_formatter(
-                        screening)
-
                     column_to_highlight = 'natr'
-
-                screening_formated = msg_preparer.df_formatter(screening[0])
-                img_creator.img_table_creator(screening_formated, column_to_highlight)
 
                 time.sleep(delay)
             except Exception as e:
@@ -352,41 +382,23 @@ class ScreenerBot:
 
 
     def run(self):
-        th_volume = threading.Thread(
+        th_screening_future = threading.Thread(
             target=self.screening_preparer,
             args=(
-                self.screener.get_screening, 60
+                self.screener_future.get_screening, 1
             )
         )
-        th_volume.daemon = True
-        th_volume.start()
+        th_screening_future.daemon = True
+        th_screening_future.start()
 
-        th_natr = threading.Thread(
-            target=self.screening_preparer,
-            args=(
-                self.screener.get_top_natr, 1
-            )
-        )
-        th_natr.daemon = True
-        th_natr.start()
-
-        th_funding = threading.Thread(
-            target=self.screening_preparer,
-            args=(
-                self.screener.get_upcoming_fundings, 60
-            )
-        )
-        th_funding.daemon = True
-        th_funding.start()
-
-        th_natr_spot = threading.Thread(
+        th_screening_spot = threading.Thread(
             target=self.screening_preparer,
             args = (
-                self.screener_spot.get_top_natr, 1
+                self.screener_spot.get_screening, 1
             )
         )
-        th_natr_spot.daemon = True
-        th_natr_spot.start()
+        th_screening_spot.daemon = True
+        th_screening_spot.start()
 
         th_alert = threading.Thread(
             target=self.alert_schedule
