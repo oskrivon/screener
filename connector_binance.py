@@ -14,7 +14,7 @@ class BinanceConnector:
         self.proxies = [
             'neppaque5766:fac948@193.23.50.223:10177',
             'neppaque5766:fac948@109.248.7.92:10228',
-            'neppaque5766:fac948@109.248.7.192:10228',
+            'neppaque5766:fac948@109.248.7.192:10239',
             'neppaque5766:fac948@213.108.196.235:10163',
             'neppaque5766:fac948@109.248.7.172:10196',
             'neppaque5766:fac948@213.108.196.206:10120',

@@ -308,21 +308,25 @@ class ScreenerBot:
         while self.thread_go:
             try:
                 if screening_type == self.screener_future.get_screening:
-                    screening = msg_preparer.df_formatter(screening_type())
+                    #screening = msg_preparer.df_formatter(screening_type())
+                    screening = screening_type()
                     upcoming_time_row = screening['next_funding_time'].min()
 
                     num = 10
                     
                     top_natr_14x5 = screening.sort_values(by='natr_14x5', ascending=False)[:num]
                     tickers_fut_natr_14x5 = msg_preparer.msg_copy_tickers_formatter(top_natr_14x5)
+                    top_natr_14x5 = msg_preparer.df_formatter(top_natr_14x5)
                     img_creator.img_table_creator(top_natr_14x5, 'natr 14x5m')
 
                     top_natr_30x1 = screening.sort_values(by='natr_30x1', ascending=False)[:num]
                     tickers_fut_natr_30x1 = msg_preparer.msg_copy_tickers_formatter(top_natr_30x1)
+                    top_natr_30x1 = msg_preparer.df_formatter(top_natr_30x1)
                     img_creator.img_table_creator(top_natr_30x1, 'natr 30x1m')
 
                     top_vol = screening.sort_values(by='vol_4h', ascending=False)[:num]
                     tickers_fut_vol = msg_preparer.msg_copy_tickers_formatter(top_vol)
+                    top_vol = msg_preparer.df_formatter(top_vol)
                     img_creator.img_table_creator(top_vol, 'vol 4h')
 
                     upcoming_fundings = \
@@ -334,6 +338,7 @@ class ScreenerBot:
                         )[:num]
                     funding_time = datetime.fromtimestamp(int(upcoming_time_row)/1000).strftime('%Y-%m-%d %H:%M:%S')
                     tickers_fut_fund = msg_preparer.msg_copy_tickers_formatter(top_fund)
+                    top_fund = msg_preparer.df_formatter(top_fund)
                     img_creator.img_table_creator(top_fund, 'FR')
 
                     conn.send([
@@ -343,20 +348,24 @@ class ScreenerBot:
                     ])
 
                 elif screening_type == self.screener_spot.get_screening:
-                    screening = msg_preparer.df_formatter(screening_type())
+                    #screening = msg_preparer.df_formatter(screening_type())
+                    screening = screening_type()
 
                     num = 10
 
                     top_natr_14x5 = screening.sort_values(by='natr_14x5', ascending=False)[:num]
                     tickers_spot_natr_14x5 = msg_preparer.msg_copy_tickers_formatter(top_natr_14x5)
+                    top_natr_14x5 = msg_preparer.df_formatter(top_natr_14x5)
                     img_creator.img_table_creator(top_natr_14x5, 'natr 14x5m')
 
                     top_natr_30x1 = screening.sort_values(by='natr_30x1', ascending=False)[:num]
                     tickers_spot_natr_30x1= msg_preparer.msg_copy_tickers_formatter(top_natr_30x1)
+                    top_natr_30x1 = msg_preparer.df_formatter(top_natr_30x1)
                     img_creator.img_table_creator(top_natr_30x1, 'natr 30x1m')
 
                     top_vol = screening.sort_values(by='vol_4h', ascending=False)[:num]
                     tickers_spot_vol = msg_preparer.msg_copy_tickers_formatter(top_vol)
+                    top_vol = msg_preparer.df_formatter(top_vol)
                     img_creator.img_table_creator(top_vol, 'vol 4h')
 
                     # scetch saving json for rest server
