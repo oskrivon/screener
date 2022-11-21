@@ -5,6 +5,7 @@ import json
 import yaml
 import time
 import threading
+from multiprocessing import Process, Pipe
 import schedule
 from datetime import datetime
 
@@ -303,7 +304,7 @@ class ScreenerBot:
             time.sleep(3)
 
 
-    def screening_preparer(self, screening_type, delay):
+    def screening_preparer(self, screening_type, conn, delay):
         while self.thread_go:
             try:
                 if screening_type == self.screener_future.get_screening:
@@ -313,15 +314,15 @@ class ScreenerBot:
                     num = 10
                     
                     top_natr_14x5 = screening.sort_values(by='natr_14x5', ascending=False)[:num]
-                    self.tickers_fut_natr_14x5 = msg_preparer.msg_copy_tickers_formatter(top_natr_14x5)
+                    tickers_fut_natr_14x5 = msg_preparer.msg_copy_tickers_formatter(top_natr_14x5)
                     img_creator.img_table_creator(top_natr_14x5, 'natr 14x5m')
 
                     top_natr_30x1 = screening.sort_values(by='natr_30x1', ascending=False)[:num]
-                    self.tickers_fut_natr_30x1 = msg_preparer.msg_copy_tickers_formatter(top_natr_30x1)
+                    tickers_fut_natr_30x1 = msg_preparer.msg_copy_tickers_formatter(top_natr_30x1)
                     img_creator.img_table_creator(top_natr_30x1, 'natr 30x1m')
 
                     top_vol = screening.sort_values(by='vol_4h', ascending=False)[:num]
-                    self.tickers_fut_vol = msg_preparer.msg_copy_tickers_formatter(top_vol)
+                    tickers_fut_vol = msg_preparer.msg_copy_tickers_formatter(top_vol)
                     img_creator.img_table_creator(top_vol, 'vol 4h')
 
                     upcoming_fundings = \
@@ -331,9 +332,15 @@ class ScreenerBot:
                         key=abs,
                         ascending=False
                         )[:num]
-                    self.funding_time = datetime.fromtimestamp(int(upcoming_time_row)/1000).strftime('%Y-%m-%d %H:%M:%S')
-                    self.tickers_fut_fund = msg_preparer.msg_copy_tickers_formatter(top_fund)
+                    funding_time = datetime.fromtimestamp(int(upcoming_time_row)/1000).strftime('%Y-%m-%d %H:%M:%S')
+                    tickers_fut_fund = msg_preparer.msg_copy_tickers_formatter(top_fund)
                     img_creator.img_table_creator(top_fund, 'FR')
+
+                    conn.send([
+                        tickers_fut_natr_14x5, tickers_fut_natr_30x1,
+                        tickers_fut_vol, tickers_fut_fund,
+                        funding_time
+                    ])
 
                 elif screening_type == self.screener_spot.get_screening:
                     screening = msg_preparer.df_formatter(screening_type())
@@ -341,15 +348,15 @@ class ScreenerBot:
                     num = 10
 
                     top_natr_14x5 = screening.sort_values(by='natr_14x5', ascending=False)[:num]
-                    self.tickers_spot_natr_14x5 = msg_preparer.msg_copy_tickers_formatter(top_natr_14x5)
+                    tickers_spot_natr_14x5 = msg_preparer.msg_copy_tickers_formatter(top_natr_14x5)
                     img_creator.img_table_creator(top_natr_14x5, 'natr 14x5m')
 
                     top_natr_30x1 = screening.sort_values(by='natr_30x1', ascending=False)[:num]
-                    self.tickers_spot_natr_30x1= msg_preparer.msg_copy_tickers_formatter(top_natr_30x1)
+                    tickers_spot_natr_30x1= msg_preparer.msg_copy_tickers_formatter(top_natr_30x1)
                     img_creator.img_table_creator(top_natr_30x1, 'natr 30x1m')
 
                     top_vol = screening.sort_values(by='vol_4h', ascending=False)[:num]
-                    self.tickers_spot_vol = msg_preparer.msg_copy_tickers_formatter(top_vol)
+                    tickers_spot_vol = msg_preparer.msg_copy_tickers_formatter(top_vol)
                     img_creator.img_table_creator(top_vol, 'vol 4h')
 
                     # scetch saving json for rest server
@@ -357,7 +364,10 @@ class ScreenerBot:
                     #saver.json_save(df_for_json)
                     # end of the scetch
 
-                    column_to_highlight = 'natr'
+                    conn.send([
+                        tickers_spot_natr_14x5, tickers_spot_natr_30x1,
+                        tickers_spot_vol
+                    ])
 
                 time.sleep(delay)
             except Exception as e:
@@ -381,24 +391,47 @@ class ScreenerBot:
             schedule.run_pending()
 
 
+    def upload_market_data(self, conn_fut, conn_spot):
+        while True:
+            future_tickers = conn_fut.recv()
+            spot_tickers = conn_spot.recv()
+
+            (self.tickers_fut_natr_14x5, self.tickers_fut_natr_30x1,
+            self.tickers_fut_vol, self.tickers_fut_fund,
+            self.funding_time) = future_tickers
+
+            (self.tickers_spot_natr_14x5, self.tickers_spot_natr_30x1,
+            self.tickers_spot_vol) = spot_tickers
+
+
     def run(self):
-        th_screening_future = threading.Thread(
+        parent_future, child_future = Pipe()
+        parent_spot, child_spot = Pipe()
+
+        th_screening_future = Process(
             target=self.screening_preparer,
             args=(
-                self.screener_future.get_screening, 1
+                self.screener_future.get_screening, child_future, 1
             )
         )
-        th_screening_future.daemon = True
+        #th_screening_future.daemon = True
         th_screening_future.start()
 
-        th_screening_spot = threading.Thread(
+        th_screening_spot = Process(
             target=self.screening_preparer,
             args = (
-                self.screener_spot.get_screening, 1
+                self.screener_spot.get_screening, child_spot, 1
             )
         )
-        th_screening_spot.daemon = True
+        #th_screening_spot.daemon = True
         th_screening_spot.start()
+
+        th_connection = threading.Thread(
+            target=self.upload_market_data,
+            args= (parent_future, parent_spot)
+        )
+        th_connection.daemon = True
+        th_connection.start()
 
         th_alert = threading.Thread(
             target=self.alert_schedule

@@ -3,6 +3,7 @@ import pandas as pd
 import json
 from datetime import datetime
 from pprint import pprint
+import random
 
 
 import conn_binance_stream as stream
@@ -10,6 +11,15 @@ import conn_binance_stream as stream
 
 class BinanceConnector:
     def __init__(self, market):
+        self.proxies = [
+            'neppaque5766:fac948@193.23.50.223:10177',
+            'neppaque5766:fac948@109.248.7.92:10228',
+            'neppaque5766:fac948@109.248.7.192:10228',
+            'neppaque5766:fac948@213.108.196.235:10163',
+            'neppaque5766:fac948@109.248.7.172:10196',
+            'neppaque5766:fac948@213.108.196.206:10120',
+            'neppaque5766:fac948@193.23.50.91:10351'
+        ]
         if market == 'future':
             self.endpoint = 'https://fapi.binance.com/fapi/v1/'
             self.metrics = [
@@ -133,7 +143,7 @@ class BinanceConnector:
         return server_time
 
 
-    def get_kline(self, quotation, interval, limit=15):
+    def get_kline(self, quotation, proxy, interval, limit=15):
         endpoint = self.endpoint + 'klines'
         payload = {
             'symbol': quotation,
@@ -143,7 +153,9 @@ class BinanceConnector:
 
         df = 0
         try:
-            r = requests.get(endpoint, params=payload)
+            #proxy = random.randint(0, len(self.proxies) - 1)
+            proxies = {'http': proxy}
+            r = requests.get(endpoint, params=payload,proxies=proxies)
             if r.status_code == 200:
                 data = json.loads(r.text)
                 columns = [
@@ -158,7 +170,7 @@ class BinanceConnector:
                 print('>>> error OI request:', r.status_code)
         except Exception as e:
             print(e)
-        
+
         result = df[[
             'Open', 'High', 'Low', 'Close', 
             'Volume', 'Quote asset volume']].astype(float)
@@ -166,8 +178,8 @@ class BinanceConnector:
         return result
 
 
-    def get_volume_4h(self, quotation, interval = '4h', limit=1):
-        return (self.get_kline(quotation, interval, limit)
+    def get_volume_4h(self, quotation, proxy, interval = '4h', limit=1):
+        return (self.get_kline(quotation, proxy, interval, limit)
                 .iloc[0]['Quote asset volume'])
 
 
@@ -183,7 +195,7 @@ class BinanceConnector:
 
 if __name__ == '__main__':
     connector = BinanceConnector('spot')
-    #print(connector.get_kline('TCTUSDT', '5m'))
+    print(connector.get_kline('TCTUSDT', '5m'))
     #qqq = connector.add_all_quotes()
     #print(connector.add_volumes(qqq))
-    print(connector.get_volume_4h('BTCUSDT'))
+    #print(connector.get_volume_4h('BTCUSDT'))

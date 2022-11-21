@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from datetime import datetime
+import multiprocessing
 
 import talib
 from pybit import inverse_perpetual
@@ -28,6 +29,16 @@ class Screener:
             self.df = pd.DataFrame({'quotation': self.quotation})
             
         if self.exchange == 'binance':
+            self.proxies = [
+                'neppaque5766:fac948@193.23.50.223:10177',
+                'neppaque5766:fac948@109.248.7.92:10228',
+                'neppaque5766:fac948@109.248.7.192:10228',
+                'neppaque5766:fac948@213.108.196.235:10163',
+                'neppaque5766:fac948@109.248.7.172:10196',
+                'neppaque5766:fac948@213.108.196.206:10120',
+                'neppaque5766:fac948@193.23.50.91:10351'
+            ]
+
             self.connector = binance.BinanceConnector(self.market)
 
         print('>>> Screener OK')
@@ -83,7 +94,7 @@ class Screener:
 
 
     # return 14x5 and 30x1 natres
-    def get_natr(self, quotation):
+    def get_natr(self, quotation, proxy):
         natr_14x5 = 0
         natr_30x1 = 0
 
@@ -91,7 +102,8 @@ class Screener:
             df = data_preparer.data_preparation(quotation, '15m')
         
         if self.exchange == 'binance':
-            df = self.connector.get_kline(quotation, '5m')
+            print(quotation)
+            df = self.connector.get_kline(quotation, proxy, '5m')
 
             x = 100 # magick number, if < natr be worst
             timeperiod = 14
@@ -99,9 +111,11 @@ class Screener:
             high = np.array(df['High'])[-x:]
             low = np.array(df['Low'])[-x:]
             close = np.array(df['Close'])[-x:]
-            natr_14x5 = talib.NATR(high, low, close, timeperiod)[-1]
 
-            df = self.connector.get_kline(quotation, '1m', limit=31)
+            natr_14x5 = talib.NATR(high, low, close, timeperiod)[-1]
+            
+
+            df = self.connector.get_kline(quotation, proxy, '1m', limit=31)
 
             x = 100 # magick number, if < natr be worst
             timeperiod = 30
@@ -109,13 +123,15 @@ class Screener:
             high = np.array(df['High'])[-x:]
             low = np.array(df['Low'])[-x:]
             close = np.array(df['Close'])[-x:]
+
             natr_30x1 = talib.NATR(high, low, close, timeperiod)[-1]
 
         return natr_14x5, natr_30x1
 
 
     # in addition to the natr, add the 4h volumes
-    def add_natr(self, metrics):
+    def add_natr(self, metrics, proxy):
+        print(id)
         metrics_ = metrics.copy()
 
         natr_14x5 = []
@@ -124,9 +140,9 @@ class Screener:
 
         for row in metrics_.itertuples():
             quotation = row.quotation
-            natr_14x5.append(self.get_natr(quotation)[0])
-            natr_30x1.append(self.get_natr(quotation)[1])
-            vol_4h.append(self.connector.get_volume_4h(quotation))
+            natr_14x5.append(self.get_natr(quotation, proxy)[0])
+            natr_30x1.append(self.get_natr(quotation, proxy)[1])
+            vol_4h.append(self.connector.get_volume_4h(quotation, proxy))
         
         metrics_['natr_14x5'] = natr_14x5
         metrics_['natr_30x1'] = natr_30x1
@@ -162,16 +178,28 @@ class Screener:
     
     def get_screening(self):
         market_metrics = self.get_market_metrics()
-        mm_with_natres = self.add_natr(market_metrics)
 
-        print(len(mm_with_natres))
+        # splitting a dataframe into chunk
+        chunk_size = len(market_metrics) // len(self.proxies)
+        dfs = []
+        i = 0
+        while i < len(market_metrics):
+            dfs.append(market_metrics[i:i + chunk_size])
+            i += chunk_size
+
+        pool = multiprocessing.Pool(len(self.proxies))
+        result = pool.starmap(self.add_natr, zip(dfs, self.proxies))
+
+        mm_with_natres = pd.concat(result, sort=False, axis=0)
+
+        #print(len(mm_with_natres))
         return mm_with_natres
 
 
 if __name__ == '__main__':
-    screener = Screener('binance', 'future')
-    mmm = screener.get_market_metrics()
+    screener = Screener('binance', 'spot')
+    #mmm = screener.get_market_metrics()
     #print(mmm)
     #print(screener.get_screening())
     #print(screener.get_natr('BTCUSDT'))
-    #print(screener.get_screening())
+    print(screener.get_screening())
