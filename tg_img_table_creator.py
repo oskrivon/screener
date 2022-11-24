@@ -29,13 +29,14 @@ def img_table_creator(df_inn, column_name):
                             ('funding rate'): '{:.4f}'})
 
         if column_name == 'vol 4h':metric_name = 'vol 4h'
+        if column_name == 'vol 24h':metric_name = 'vol 24h'
         if column_name == 'natr 14x5m': metric_name = 'natr 14x5m'
         if column_name == 'natr 30x1m': metric_name = 'natr 30x1m'
         if column_name == 'FR': metric_name = 'fundings'
 
     else:
         df_ = df.loc[:, ['quotation', 'natr_14x5', 'natr_30x1', 'vol_4h', 'turnover_24h']]
-        df_.rename(columns = {'turnover_24h': 'volume',
+        df_.rename(columns = {'turnover_24h': 'vol 24h',
                               'vol_4h': 'vol 4h',
                               'natr_14x5': 'natr 14x5m',
                               'natr_30x1': 'natr 30x1m',}, inplace = True)
@@ -51,6 +52,7 @@ def img_table_creator(df_inn, column_name):
                             ('natr 30x1m'): '{:.2f}'})
 
         if column_name == 'vol 4h':metric_name = 'vol 4h spot'
+        if column_name == 'vol 24h':metric_name = 'vol 24h spot'
         if column_name == 'natr 14x5m': metric_name = 'natr 14x5m spot'
         if column_name == 'natr 30x1m': metric_name = 'natr 30x1m spot'
 

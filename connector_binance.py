@@ -12,13 +12,18 @@ import conn_binance_stream as stream
 class BinanceConnector:
     def __init__(self, market):
         self.proxies = [
-            'neppaque5766:fac948@193.23.50.223:10177',
-            'neppaque5766:fac948@109.248.7.92:10228',
-            'neppaque5766:fac948@109.248.7.192:10239',
-            'neppaque5766:fac948@213.108.196.235:10163',
-            'neppaque5766:fac948@109.248.7.172:10196',
-            'neppaque5766:fac948@213.108.196.206:10120',
-            'neppaque5766:fac948@193.23.50.91:10351'
+            'vHqe1yNDmpfIcr:neppaque@185.252.27.202:54168'
+            'vHqe1yNDmpfIcr:neppaque@176.114.6.251:54168'
+            'vHqe1yNDmpfIcr:neppaque@193.42.105.50:54168'
+            'vHqe1yNDmpfIcr:neppaque@185.230.91.69:54168'
+
+            #'neppaque5766:fac948@193.23.50.223:10177',
+            #'neppaque5766:fac948@109.248.7.92:10228',
+            #'neppaque5766:fac948@109.248.7.192:10239',
+            #'neppaque5766:fac948@213.108.196.235:10163',
+            #'neppaque5766:fac948@109.248.7.172:10196',
+            #'neppaque5766:fac948@213.108.196.206:10120',
+            #'neppaque5766:fac948@193.23.50.91:10351'
         ]
         if market == 'future':
             self.endpoint = 'https://fapi.binance.com/fapi/v1/'

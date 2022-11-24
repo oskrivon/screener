@@ -26,11 +26,6 @@ class ScreenerBot:
         self.thread_go = True
 
         self.proxies = {'http': 'http://neppaque5766:fac948@193.23.50.40:10251'}
-        #print(requests.get('https://whoer.net/ru', proxies=self.proxies).text)
-
-        # creating file with users id (if not exist)
-        #file = open(self.users_list, 'a')
-        #file.close()
 
         self.users = []
         with open('users.yaml') as f:
@@ -50,12 +45,14 @@ class ScreenerBot:
         self.msg_natrs_spot = gag_later
         self.funding_time = ''
 
-        self.tickers_fut_vol = gag_later
+        self.tickers_fut_vol_4h = gag_later
+        self.tickers_fut_vol_24h = gag_later
         self.tickers_fut_natr_14x5 = gag_later
         self.tickers_fut_natr_30x1 = gag_later
         self.tickers_fut_fund = gag_later
 
-        self.tickers_spot_vol = gag_later
+        self.tickers_spot_vol_4h = gag_later
+        self.tickers_spot_vol_24h = gag_later
         self.tickers_spot_natr_14x5 = gag_later
         self.tickers_spot_natr_30x1 = gag_later
 
@@ -144,17 +141,22 @@ class ScreenerBot:
         if msg == 'go':
             self.thread_go = True
 
-        if msg == 'VOL 4h':
+        if msg == 'VOL 4h FUT':
             caption = 'top qoutes by volume' + '\n' + '\n' + \
-                self.tickers_fut_vol
+                self.tickers_fut_vol_4h
             self.sender.send_photo(chat_id, 'screener_results/' + 'vol 4h' + '.png', caption)
+
+        if msg == 'VOL 24h FUT':
+            caption = 'top qoutes by volume' + '\n' + '\n' + \
+                self.tickers_fut_vol_24h
+            self.sender.send_photo(chat_id, 'screener_results/' + 'vol 24h' + '.png', caption)
         
-        if msg == 'NATR 5':
+        if msg == 'NATR 14x5m FUT':
             caption = 'top qoutes by NATR' + '\n' + '\n' + \
                 self.tickers_fut_natr_14x5
             self.sender.send_photo(chat_id, 'screener_results/' + 'natr 14x5m' + '.png', caption)
         
-        if msg == 'NATR 1':
+        if msg == 'NATR 30x1m FUT':
             caption = 'top qoutes by NATR' + '\n' + '\n' + \
                 self.tickers_fut_natr_30x1
             self.sender.send_photo(chat_id, 'screener_results/' + 'natr 30x1m' + '.png', caption)
@@ -166,17 +168,23 @@ class ScreenerBot:
 
         if msg == 'VOL 4h SPOT':
             caption = 'top qoutes by NATR' + '\n' + '\n' + \
-                self.tickers_spot_vol
+                self.tickers_spot_vol_4h
             self.sender.send_photo(chat_id, 'screener_results/' + 'vol 4h spot' + '.png', caption)
             self.reply_spot(chat_id)
+        
+        if msg == 'VOL 24h SPOT':
+            caption = 'top qoutes by NATR' + '\n' + '\n' + \
+                self.tickers_spot_vol_24h
+            self.sender.send_photo(chat_id, 'screener_results/' + 'vol 24h spot' + '.png', caption)
+            self.reply_spot(chat_id)
 
-        if msg == 'NATR 5 SPOT':
+        if msg == 'NATR 14x5m SPOT':
             caption = 'top qoutes by NATR' + '\n' + '\n' + \
                 self.tickers_spot_natr_14x5
             self.sender.send_photo(chat_id, 'screener_results/' + 'natr 14x5m spot' + '.png', caption)
             self.reply_spot(chat_id)
 
-        if msg == 'NATR 1 SPOT':
+        if msg == 'NATR 30x1m SPOT':
             caption = 'top qoutes by NATR' + '\n' + '\n' + \
                 self.tickers_spot_natr_30x1
             self.sender.send_photo(chat_id, 'screener_results/' + 'natr 30x1m spot' + '.png', caption)
@@ -195,7 +203,9 @@ class ScreenerBot:
         reply_markup = { 
             "keyboard": [
                 ['spot'],
-                ['VOL 4h', 'NATR 5', 'NATR 1', 'FUNDING'], 
+                #['NATR 5 FUT', 'NATR 1 FUT', 'VOL 4h FUT', 'VOL 24h FUT', 'FUNDING'], 
+                ['NATR 14x5m FUT', 'NATR 30x1m FUT'],
+                ['VOL 4h FUT', 'VOL 24h FUT', 'FUNDING'],
                 ['help', 'roadmap', 'feedback']
             ], 
             "resize_keyboard": True, 
@@ -216,7 +226,8 @@ class ScreenerBot:
         reply_markup = { 
             "keyboard": [
                 ['future'],
-                ['VOL 4h SPOT', 'NATR 5 SPOT', 'NATR 1 SPOT'], 
+                ['NATR 14x5m SPOT', 'NATR 30x1m SPOT'], 
+                ['VOL 4h SPOT', 'VOL 24h SPOT'],
                 ['help', 'roadmap', 'feedback']
             ], 
             "resize_keyboard": True, 
@@ -324,10 +335,15 @@ class ScreenerBot:
                     top_natr_30x1 = msg_preparer.df_formatter(top_natr_30x1)
                     img_creator.img_table_creator(top_natr_30x1, 'natr 30x1m')
 
-                    top_vol = screening.sort_values(by='vol_4h', ascending=False)[:num]
-                    tickers_fut_vol = msg_preparer.msg_copy_tickers_formatter(top_vol)
-                    top_vol = msg_preparer.df_formatter(top_vol)
-                    img_creator.img_table_creator(top_vol, 'vol 4h')
+                    top_vol_4h = screening.sort_values(by='vol_4h', ascending=False)[:num]
+                    tickers_fut_vol_4h = msg_preparer.msg_copy_tickers_formatter(top_vol_4h)
+                    top_vol_4h = msg_preparer.df_formatter(top_vol_4h)
+                    img_creator.img_table_creator(top_vol_4h, 'vol 4h')
+
+                    top_vol_24h = screening.sort_values(by='turnover_24h', ascending=False)[:num]
+                    tickers_fut_vol_24h = msg_preparer.msg_copy_tickers_formatter(top_vol_24h)
+                    top_vol_24h = msg_preparer.df_formatter(top_vol_24h)
+                    img_creator.img_table_creator(top_vol_24h, 'vol 24h')
 
                     upcoming_fundings = \
                         screening[screening['next_funding_time'] == upcoming_time_row]
@@ -343,8 +359,8 @@ class ScreenerBot:
 
                     conn.send([
                         tickers_fut_natr_14x5, tickers_fut_natr_30x1,
-                        tickers_fut_vol, tickers_fut_fund,
-                        funding_time
+                        tickers_fut_vol_4h, tickers_fut_vol_24h,
+                        tickers_fut_fund, funding_time
                     ])
 
                 elif screening_type == self.screener_spot.get_screening:
@@ -363,10 +379,15 @@ class ScreenerBot:
                     top_natr_30x1 = msg_preparer.df_formatter(top_natr_30x1)
                     img_creator.img_table_creator(top_natr_30x1, 'natr 30x1m')
 
-                    top_vol = screening.sort_values(by='vol_4h', ascending=False)[:num]
-                    tickers_spot_vol = msg_preparer.msg_copy_tickers_formatter(top_vol)
-                    top_vol = msg_preparer.df_formatter(top_vol)
-                    img_creator.img_table_creator(top_vol, 'vol 4h')
+                    top_vol_4h = screening.sort_values(by='vol_4h', ascending=False)[:num]
+                    tickers_spot_vol_4h = msg_preparer.msg_copy_tickers_formatter(top_vol_4h)
+                    top_vol_4h = msg_preparer.df_formatter(top_vol_4h)
+                    img_creator.img_table_creator(top_vol_4h, 'vol 4h')
+
+                    top_vol_24h = screening.sort_values(by='turnover_24h', ascending=False)[:num]
+                    tickers_fut_vol_24h = msg_preparer.msg_copy_tickers_formatter(top_vol_24h)
+                    top_vol_24h = msg_preparer.df_formatter(top_vol_24h)
+                    img_creator.img_table_creator(top_vol_24h, 'vol 24h')
 
                     # scetch saving json for rest server
                     #df_for_json = screening[0][['quotation','natr','turnover_24h']].copy()
@@ -375,7 +396,7 @@ class ScreenerBot:
 
                     conn.send([
                         tickers_spot_natr_14x5, tickers_spot_natr_30x1,
-                        tickers_spot_vol
+                        tickers_spot_vol_4h, tickers_fut_vol_24h
                     ])
 
                 time.sleep(delay)
@@ -406,11 +427,11 @@ class ScreenerBot:
             spot_tickers = conn_spot.recv()
 
             (self.tickers_fut_natr_14x5, self.tickers_fut_natr_30x1,
-            self.tickers_fut_vol, self.tickers_fut_fund,
-            self.funding_time) = future_tickers
+            self.tickers_fut_vol_4h, self.tickers_fut_vol_24h,
+             self.tickers_fut_fund, self.funding_time) = future_tickers
 
             (self.tickers_spot_natr_14x5, self.tickers_spot_natr_30x1,
-            self.tickers_spot_vol) = spot_tickers
+            self.tickers_spot_vol_4h, self.tickers_spot_vol_24h) = spot_tickers
 
 
     def run(self):
