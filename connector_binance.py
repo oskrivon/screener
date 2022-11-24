@@ -12,10 +12,14 @@ import conn_binance_stream as stream
 class BinanceConnector:
     def __init__(self, market):
         self.proxies = [
-            'vHqe1yNDmpfIcr:neppaque@185.252.27.202:54168'
-            'vHqe1yNDmpfIcr:neppaque@176.114.6.251:54168'
-            'vHqe1yNDmpfIcr:neppaque@193.42.105.50:54168'
-            'vHqe1yNDmpfIcr:neppaque@185.230.91.69:54168'
+            'vHqe1yNDmpfIcr:neppaque@185.252.27.202:54168',
+            'vHqe1yNDmpfIcr:neppaque@176.114.6.251:54168',
+            'vHqe1yNDmpfIcr:neppaque@193.42.105.50:54168',
+            'vHqe1yNDmpfIcr:neppaque@185.230.91.69:54168',
+            'uPglT3Hgob5P7a:neppaque@185.252.27.252:54257',
+            'uPglT3Hgob5P7a:neppaque@176.114.7.9:54257',
+            'uPglT3Hgob5P7a:neppaque@176.107.181.149:54257',
+            'uPglT3Hgob5P7a:neppaque@185.230.91.55:54257'
 
             #'neppaque5766:fac948@193.23.50.223:10177',
             #'neppaque5766:fac948@109.248.7.92:10228',

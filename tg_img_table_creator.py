@@ -56,9 +56,6 @@ def img_table_creator(df_inn, column_name):
         if column_name == 'natr 14x5m': metric_name = 'natr 14x5m spot'
         if column_name == 'natr 30x1m': metric_name = 'natr 30x1m spot'
 
-        print(df_)
-        print(df_.columns)
-
     name = path + metric_name + '.png'
 
     dfi.export(df_img, name)

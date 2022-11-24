@@ -3,3 +3,6 @@ screener_token.txt
 msg_log.csv
 log_analyser*
 *.json
+imgs*
+img_downloader.py
+

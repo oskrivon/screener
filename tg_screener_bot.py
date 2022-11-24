@@ -30,7 +30,6 @@ class ScreenerBot:
         self.users = []
         with open('users.yaml') as f:
             self.users = yaml.load(f, Loader=yaml.SafeLoader)
-            print(self.users)
         f.close()
 
         self.screener_future = ms.Screener('binance', 'future')
@@ -97,10 +96,26 @@ class ScreenerBot:
             self.users_update(chat_id)
         
         if msg == 'help':
-            msg_ = ('"VOLUME" to get the top 10 quotes with the highest volumes at the moment (last 24 hours, $)' + '\n'+
-                    '"NATR" to get the top 10 quotes with the highest NATR' + '\n' +
-                    '"FUNDING" to get the top quotes with the highest fundings rate' + '\n' +
-                    'data source: Binance')
+            msg_ = ('buttons description' + '\n' + '\n' +
+                    'spot: show spot market metrics' + '\n' +
+                    'future: show futures market metrics' + '\n' + '\n' +
+                    'VOL 4h: get the top 10 quotes with the highest volumes (last 4 hours, $)' + '\n' + 
+                    'VOL 44h: get the top 10 quotes with the highest volumes (last 24 hours, $)' + '\n' + '\n' + 
+                    'NATR 14x5m: get the top 10 quotes with the highest NATR for the current market (14 5-minute candles)' + '\n' +
+                    'NATR 30x1m: get the top 10 quotes with the highest NATR for the current market (30 1-minute candles)' + '\n' + '\n' +
+                    'FUNDING: get the top quotes with the highest fundings rate' + '\n' + '\n' + 
+                    'data source: Binance' + '\n' +
+                    '________________' + '\n' +
+                    'описание кнопок' + '\n' + '\n' +
+                    'spot: показать метрики спотового рынка' + '\n' + 
+                    'future: показать метрики фьючерсного рынка' + '\n' + '\n' +
+                    'VOL 4h: получить топ-10 котировок с самыми высокими объемами(последние 4 часа, $)' + '\n' +
+                    'VOL 24h: получить топ-10 котировок с самыми высокими объемами(последние 24 часа, $)' + '\n' + '\n' + 
+                    'NATR 14x5m: получить топ-10 котировок с самым высоким NATR для текущего рынка (14 5-минутных свечей)' + '\n' +
+                    'NATR 30x1m: получить топ-10 котировок с самым высоким NATR для текущего рынка (30 минутных свечей)' + '\n' + '\n' +
+                    'FUNDING: получить топ котировок с самой высокой ставкой финансирования' + '\n' + '\n' +
+                    'источник данных: Binance' 
+                )
             self.sender.send_message(chat_id, msg_)
 
         if msg == 'roadmap':
@@ -112,13 +127,15 @@ class ScreenerBot:
                 '5. functionality improvements' + '\n' + \
                 '6. open test' + '\n' + \
                 '7. audience interest analysis' + '\n' + \
-                '8. signals within the bot' + '\n' + \
-                '9. module for analyzing support and resistance levels' + '\n' + \
-                '10. integration of levels into the bot' + '\n' + \
-                '11. site development' + '\n' + \
-                '12. site launch' + '\n' + \
-                '13. app development' + '\n' + \
-                '14. add launch'
+                '8. add spot market' + '\n' + \
+                '9. add several NATRes and volumes' + '\n' + \
+                '10. site development' + '\n' + \
+                '11. site launch' + '\n' + \
+                '12. signals within the bot' + '\n' + \
+                '13. module for analyzing support and resistance levels' + '\n' + \
+                '14. integration of levels into the bot' + '\n' + \
+                '15. app development' + '\n' + \
+                '16. app launch'
             self.sender.send_message(chat_id, msg_)
         
         if msg == 'feedback':
@@ -140,52 +157,61 @@ class ScreenerBot:
         
         if msg == 'go':
             self.thread_go = True
+        
+        if msg.startswith('bot update 235813'):
+            msg = msg.replace('bot update 235813', '')
+            for user in self.users:
+                self.sender.send_message(user, msg)
+                time.sleep(0.05)
 
         if msg == 'VOL 4h FUT':
-            caption = 'top qoutes by volume' + '\n' + '\n' + \
+            caption = 'top quotes by volume for the last 4 hours' + '\n' + '\n' + \
                 self.tickers_fut_vol_4h
             self.sender.send_photo(chat_id, 'screener_results/' + 'vol 4h' + '.png', caption)
+            self.reply_keyboard(chat_id)
 
         if msg == 'VOL 24h FUT':
-            caption = 'top qoutes by volume' + '\n' + '\n' + \
+            caption = 'top quotes by volume for the last 24 hours' + '\n' + '\n' + \
                 self.tickers_fut_vol_24h
             self.sender.send_photo(chat_id, 'screener_results/' + 'vol 24h' + '.png', caption)
+            self.reply_keyboard(chat_id)
         
         if msg == 'NATR 14x5m FUT':
-            caption = 'top qoutes by NATR' + '\n' + '\n' + \
+            caption = 'top qoutes by NATR \(14 five minute candles\) for the futures market' + '\n' + '\n' + \
                 self.tickers_fut_natr_14x5
             self.sender.send_photo(chat_id, 'screener_results/' + 'natr 14x5m' + '.png', caption)
+            self.reply_keyboard(chat_id)
         
         if msg == 'NATR 30x1m FUT':
-            caption = 'top qoutes by NATR' + '\n' + '\n' + \
+            caption = 'top qoutes by NATR \(30 one minute candles\) for the futures market' + '\n' + '\n' + \
                 self.tickers_fut_natr_30x1
             self.sender.send_photo(chat_id, 'screener_results/' + 'natr 30x1m' + '.png', caption)
+            self.reply_keyboard(chat_id)
 
         if msg == 'FUNDING':
             self.funding_reaction(chat_id)
-        
-        self.reply_keyboard(chat_id)
+            self.reply_keyboard(chat_id)
 
         if msg == 'VOL 4h SPOT':
-            caption = 'top qoutes by NATR' + '\n' + '\n' + \
+            caption = 'top quotes by volume for the last 4 hours' + '\n' + '\n' + \
                 self.tickers_spot_vol_4h
             self.sender.send_photo(chat_id, 'screener_results/' + 'vol 4h spot' + '.png', caption)
             self.reply_spot(chat_id)
         
         if msg == 'VOL 24h SPOT':
-            caption = 'top qoutes by NATR' + '\n' + '\n' + \
+            caption = 'top quotes by volume for the last 24 hours' + '\n' + '\n' + \
                 self.tickers_spot_vol_24h
             self.sender.send_photo(chat_id, 'screener_results/' + 'vol 24h spot' + '.png', caption)
             self.reply_spot(chat_id)
 
         if msg == 'NATR 14x5m SPOT':
-            caption = 'top qoutes by NATR' + '\n' + '\n' + \
+            caption = 'top qoutes by NATR \(14 five minute candles\) for the spot market' + '\n' + '\n' + \
                 self.tickers_spot_natr_14x5
             self.sender.send_photo(chat_id, 'screener_results/' + 'natr 14x5m spot' + '.png', caption)
             self.reply_spot(chat_id)
 
         if msg == 'NATR 30x1m SPOT':
-            caption = 'top qoutes by NATR' + '\n' + '\n' + \
+            caption = 'top qoutes by NATR \(30 one minute candles\) for the spot market' + '\n' + '\n' + \
                 self.tickers_spot_natr_30x1
             self.sender.send_photo(chat_id, 'screener_results/' + 'natr 30x1m spot' + '.png', caption)
             self.reply_spot(chat_id)
@@ -312,7 +338,11 @@ class ScreenerBot:
             except Exception as e:
                 print(e)
                 
-            time.sleep(3)
+            time.sleep(2)
+    
+
+    def get_img_name(self, quotation):
+        return quotation[:-4] + '.png'
 
 
     def screening_preparer(self, screening_type, conn, delay):
@@ -357,6 +387,46 @@ class ScreenerBot:
                     top_fund = msg_preparer.df_formatter(top_fund)
                     img_creator.img_table_creator(top_fund, 'FR')
 
+                    # scetch saving json for rest server
+                    df_for_json = top_natr_14x5.copy()
+                    df_for_json = df_for_json.loc[:, ['quotation', 'natr_14x5', 'turnover_24h', 'vol_4h']]
+                    df_for_json['Picture'] = df_for_json['quotation'].apply(self.get_img_name)
+                    df_for_json['natr_14x5'] = df_for_json['natr_14x5'].round(2)
+                    df_rename = df_for_json.rename(columns = {
+                        'quotation': 'Quotation',
+                        'natr_14x5': 'NATR_14x5',
+                        'turnover_24h': 'Vol_24h',
+                        'vol_4h': 'Vol_4h'
+                    })
+
+                    df_dict = df_rename.to_dict('records')
+                    try:
+                        with open('future_14x5m.json', 'w') as outfile:
+                            json.dump(df_dict, outfile, indent=4)
+                    except Exception as e:
+                        print(e)
+                    # end of the scetch
+
+                    # scetch saving json for rest server
+                    df_for_json = top_natr_30x1.copy()
+                    df_for_json = df_for_json.loc[:, ['quotation', 'natr_30x1', 'turnover_24h', 'vol_4h']]
+                    df_for_json['Picture'] = df_for_json['quotation'].apply(self.get_img_name)
+                    df_for_json['natr_30x1'] = df_for_json['natr_30x1'].round(2)
+                    df_rename = df_for_json.rename(columns = {
+                        'quotation': 'Quotation',
+                        'natr_30x1': 'NATR_30x1m',
+                        'turnover_24h': 'Vol_24h',
+                        'vol_4h': 'Vol_4h'
+                    })
+
+                    df_dict = df_rename.to_dict('records')
+                    try:
+                        with open('future_30x1m.json', 'w') as outfile:
+                            json.dump(df_dict, outfile, indent=4)
+                    except Exception as e:
+                        print(e)
+                    # end of the scetch
+
                     conn.send([
                         tickers_fut_natr_14x5, tickers_fut_natr_30x1,
                         tickers_fut_vol_4h, tickers_fut_vol_24h,
@@ -390,8 +460,43 @@ class ScreenerBot:
                     img_creator.img_table_creator(top_vol_24h, 'vol 24h')
 
                     # scetch saving json for rest server
-                    #df_for_json = screening[0][['quotation','natr','turnover_24h']].copy()
-                    #saver.json_save(df_for_json)
+                    df_for_json = top_natr_14x5.copy()
+                    df_for_json = df_for_json.loc[:, ['quotation', 'natr_14x5', 'turnover_24h', 'vol_4h']]
+                    df_for_json['Picture'] = df_for_json['quotation'].apply(self.get_img_name)
+                    df_for_json['natr_14x5'] = df_for_json['natr_14x5'].round(2)
+                    df_rename = df_for_json.rename(columns = {
+                        'quotation': 'Quotation',
+                        'natr_14x5': 'NATR_14x5m',
+                        'turnover_24h': 'Vol_24h',
+                        'vol_4h': 'Vol_4h'
+                    })
+                    
+                    df_dict = df_rename.to_dict('records')
+                    try:
+                        with open('spot_14x5m.json', 'w') as outfile:
+                            json.dump(df_dict, outfile, indent=4)
+                    except Exception as e:
+                        print(e)
+                    # end of the scetch
+
+                    # scetch saving json for rest server
+                    df_for_json = top_natr_30x1.copy()
+                    df_for_json = df_for_json.loc[:, ['quotation', 'natr_30x1', 'turnover_24h', 'vol_4h']]
+                    df_for_json['Picture'] = df_for_json['quotation'].apply(self.get_img_name)
+                    df_for_json['natr_30x1'] = df_for_json['natr_30x1'].round(2)
+                    df_rename = df_for_json.rename(columns = {
+                        'quotation': 'Quotation',
+                        'natr_30x1': 'NATR_30x1m',
+                        'turnover_24h': 'Vol_24h',
+                        'vol_4h': 'Vol_4h'
+                    })
+
+                    df_dict = df_rename.to_dict('records')
+                    try:
+                        with open('spot_30x1m.json', 'w') as outfile:
+                            json.dump(df_dict, outfile, indent=4)
+                    except Exception as e:
+                        print(e)
                     # end of the scetch
 
                     conn.send([
@@ -406,9 +511,9 @@ class ScreenerBot:
 
 
     def alert(self):
-        print(self.users)
         for user in self.users:
             self.funding_reaction(user)
+            time.sleep(0.05)
 
     
     def alert_schedule(self):

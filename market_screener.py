@@ -30,13 +30,13 @@ class Screener:
             
         if self.exchange == 'binance':
             self.proxies = [
-                'neppaque5766:fac948@193.23.50.223:10177',
-                'neppaque5766:fac948@109.248.7.92:10228',
-                'neppaque5766:fac948@109.248.7.192:10228',
-                'neppaque5766:fac948@213.108.196.235:10163',
-                'neppaque5766:fac948@109.248.7.172:10196',
-                'neppaque5766:fac948@213.108.196.206:10120',
-                'neppaque5766:fac948@193.23.50.91:10351'
+                'vHqe1yNDmpfIcr:neppaque@185.252.27.202:54168',
+                'vHqe1yNDmpfIcr:neppaque@176.114.6.251:54168',
+                'vHqe1yNDmpfIcr:neppaque@193.42.105.50:54168',
+                'vHqe1yNDmpfIcr:neppaque@185.230.91.69:54168',
+                #'neppaque5766:fac948@109.248.7.172:10196',
+                #'neppaque5766:fac948@213.108.196.206:10120',
+                #'neppaque5766:fac948@193.23.50.91:10351'
             ]
 
             self.connector = binance.BinanceConnector(self.market)
@@ -87,9 +87,8 @@ class Screener:
         else:
             df[['turnover_24h']] = df[['turnover_24h']].astype(float)
 
-        # drop all coins with 24h volume less that $30M 
-        #df = df[df.turnover_24h > 1000000]
-        print(len(df))
+        # drop all coins with 24h volume less that $1k 
+        df = df[df.turnover_24h > 1000]
         return df
 
 
@@ -102,7 +101,6 @@ class Screener:
             df = data_preparer.data_preparation(quotation, '15m')
         
         if self.exchange == 'binance':
-            print(quotation)
             df = self.connector.get_kline(quotation, proxy, '5m')
 
             x = 100 # magick number, if < natr be worst
@@ -131,7 +129,6 @@ class Screener:
 
     # in addition to the natr, add the 4h volumes
     def add_natr(self, metrics, proxy):
-        print(id)
         metrics_ = metrics.copy()
 
         natr_14x5 = []
@@ -192,7 +189,6 @@ class Screener:
 
         mm_with_natres = pd.concat(result, sort=False, axis=0)
 
-        #print(len(mm_with_natres))
         return mm_with_natres
 
 
