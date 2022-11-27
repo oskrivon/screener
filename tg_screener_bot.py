@@ -161,9 +161,17 @@ class ScreenerBot:
         
         if msg.startswith('bot update 235813'):
             msg = msg.replace('bot update 235813', '')
-            for user in self.users:
-                self.sender.send_message(user, msg)
-                time.sleep(0.05)
+
+            def broadcast():
+                for user in self.users:
+                    self.sender.send_message(user, msg)
+                    time.sleep(0.05)
+            
+            th_connection = threading.Thread(
+                target=broadcast
+            )
+            th_connection.daemon = True
+            th_connection.start()
 
         if msg == 'VOL 4h FUT':
             caption = 'top quotes by volume for the last 4 hours' + '\n' + '\n' + \
