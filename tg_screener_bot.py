@@ -5,7 +5,7 @@ import json
 import yaml
 import time
 import threading
-from multiprocessing import Process, Pipe
+from multiprocessing import Process, Pipe, Queue
 import schedule
 from datetime import datetime
 
@@ -94,6 +94,7 @@ class ScreenerBot:
 
         if msg == '/start':
             self.users_update(chat_id)
+            self.reply_keyboard(chat_id)
         
         if msg == 'help':
             msg_ = ('buttons description' + '\n' + '\n' +
@@ -345,7 +346,7 @@ class ScreenerBot:
         return quotation[:-4] + '.png'
 
 
-    def screening_preparer(self, screening_type, conn, delay):
+    def screening_preparer(self, q, screening_type, delay):
         while self.thread_go:
             try:
                 if screening_type == self.screener_future.get_screening:
@@ -394,7 +395,7 @@ class ScreenerBot:
                     df_for_json['natr_14x5'] = df_for_json['natr_14x5'].round(2)
                     df_rename = df_for_json.rename(columns = {
                         'quotation': 'Quotation',
-                        'natr_14x5': 'NATR_14x5',
+                        'natr_14x5': 'NATR_14x5m',
                         'turnover_24h': 'Vol_24h',
                         'vol_4h': 'Vol_4h'
                     })
@@ -427,7 +428,7 @@ class ScreenerBot:
                         print(e)
                     # end of the scetch
 
-                    conn.send([
+                    q.put([
                         tickers_fut_natr_14x5, tickers_fut_natr_30x1,
                         tickers_fut_vol_4h, tickers_fut_vol_24h,
                         tickers_fut_fund, funding_time
@@ -499,7 +500,7 @@ class ScreenerBot:
                         print(e)
                     # end of the scetch
 
-                    conn.send([
+                    q.put([
                         tickers_spot_natr_14x5, tickers_spot_natr_30x1,
                         tickers_spot_vol_4h, tickers_fut_vol_24h
                     ])
@@ -525,45 +526,42 @@ class ScreenerBot:
         while True:
             schedule.run_pending()
 
+    
+    def upload_market_data(self):
+        (self.tickers_fut_natr_14x5, self.tickers_fut_natr_30x1,
+        self.tickers_fut_vol_4h, self.tickers_fut_vol_24h,
+        self.tickers_fut_fund, self.funding_time) = self.q1.get()
 
-    def upload_market_data(self, conn_fut, conn_spot):
-        while True:
-            future_tickers = conn_fut.recv()
-            spot_tickers = conn_spot.recv()
-
-            (self.tickers_fut_natr_14x5, self.tickers_fut_natr_30x1,
-            self.tickers_fut_vol_4h, self.tickers_fut_vol_24h,
-             self.tickers_fut_fund, self.funding_time) = future_tickers
-
-            (self.tickers_spot_natr_14x5, self.tickers_spot_natr_30x1,
-            self.tickers_spot_vol_4h, self.tickers_spot_vol_24h) = spot_tickers
+        (self.tickers_spot_natr_14x5, self.tickers_spot_natr_30x1,
+        self.tickers_spot_vol_4h, self.tickers_spot_vol_24h) = self.q2.get()
 
 
     def run(self):
         parent_future, child_future = Pipe()
         parent_spot, child_spot = Pipe()
 
+        self.q1 = Queue()
         th_screening_future = Process(
             target=self.screening_preparer,
             args=(
-                self.screener_future.get_screening, child_future, 1
+                self.q1, self.screener_future.get_screening, 1
             )
         )
         #th_screening_future.daemon = True
         th_screening_future.start()
 
+        self.q2 = Queue()
         th_screening_spot = Process(
             target=self.screening_preparer,
             args = (
-                self.screener_spot.get_screening, child_spot, 1
+                self.q2, self.screener_spot.get_screening, 1
             )
         )
         #th_screening_spot.daemon = True
         th_screening_spot.start()
 
         th_connection = threading.Thread(
-            target=self.upload_market_data,
-            args= (parent_future, parent_spot)
+            target=self.xxx
         )
         th_connection.daemon = True
         th_connection.start()
