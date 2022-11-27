@@ -5,4 +5,4 @@ log_analyser*
 *.json
 imgs*
 img_downloader.py
-
+webimg*
