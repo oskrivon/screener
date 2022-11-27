@@ -537,9 +537,6 @@ class ScreenerBot:
 
 
     def run(self):
-        parent_future, child_future = Pipe()
-        parent_spot, child_spot = Pipe()
-
         self.q1 = Queue()
         th_screening_future = Process(
             target=self.screening_preparer,
@@ -561,7 +558,7 @@ class ScreenerBot:
         th_screening_spot.start()
 
         th_connection = threading.Thread(
-            target=self.xxx
+            target=self.upload_market_data
         )
         th_connection.daemon = True
         th_connection.start()
