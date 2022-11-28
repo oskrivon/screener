@@ -536,12 +536,13 @@ class ScreenerBot:
 
     
     def upload_market_data(self):
-        (self.tickers_fut_natr_14x5, self.tickers_fut_natr_30x1,
-        self.tickers_fut_vol_4h, self.tickers_fut_vol_24h,
-        self.tickers_fut_fund, self.funding_time) = self.q1.get()
+        while True:
+            (self.tickers_fut_natr_14x5, self.tickers_fut_natr_30x1,
+            self.tickers_fut_vol_4h, self.tickers_fut_vol_24h,
+            self.tickers_fut_fund, self.funding_time) = self.q1.get()
 
-        (self.tickers_spot_natr_14x5, self.tickers_spot_natr_30x1,
-        self.tickers_spot_vol_4h, self.tickers_spot_vol_24h) = self.q2.get()
+            (self.tickers_spot_natr_14x5, self.tickers_spot_natr_30x1,
+            self.tickers_spot_vol_4h, self.tickers_spot_vol_24h) = self.q2.get()
 
 
     def run(self):
