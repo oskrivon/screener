@@ -535,12 +535,15 @@ class ScreenerBot:
             schedule.run_pending()
 
     
-    def upload_market_data(self):
+    def update_spot_data(self):
         while True:
             (self.tickers_fut_natr_14x5, self.tickers_fut_natr_30x1,
             self.tickers_fut_vol_4h, self.tickers_fut_vol_24h,
             self.tickers_fut_fund, self.funding_time) = self.q1.get()
 
+
+    def update_future_data(self):
+        while True:
             (self.tickers_spot_natr_14x5, self.tickers_spot_natr_30x1,
             self.tickers_spot_vol_4h, self.tickers_spot_vol_24h) = self.q2.get()
 
@@ -566,11 +569,17 @@ class ScreenerBot:
         #th_screening_spot.daemon = True
         th_screening_spot.start()
 
-        th_connection = threading.Thread(
-            target=self.upload_market_data
+        th_future_update = threading.Thread(
+            target=self.update_future_data
         )
-        th_connection.daemon = True
-        th_connection.start()
+        th_future_update.daemon = True
+        th_future_update.start()
+
+        th_spot_update = threading.Thread(
+            target=self.update_spot_data
+        )
+        th_spot_update.daemon = True
+        th_spot_update.start()
 
         th_alert = threading.Thread(
             target=self.alert_schedule
